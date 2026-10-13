@@ -1,0 +1,2855 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>HACKERS - VIP Streaming</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        :root { 
+            --primary: #00f2fe; --accent: #00ff88; --danger: #ff3860;
+            --gold: #ffd700; --gold-glow: rgba(255, 215, 0, 0.4);
+            --glass: rgba(0, 0, 0, 0.8);
+            --vip-rojo: #ff2a2a;
+            --login-blue: #0084ff;
+            --purple-glow: #8257e5;
+        }
+        body { 
+            background: #000; background-size: cover; background-position: center; background-attachment: fixed;
+            color: white; font-family: 'Poppins', sans-serif; margin: 0; 
+            height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+        }
+
+        @keyframes vipBeatGlow {
+            0% { box-shadow: 0 0 6px rgba(255, 42, 42, 0.6), inset 0 0 3px rgba(255,255,255,0.4); filter: brightness(1); }
+            50% { box-shadow: 0 0 14px rgba(255, 42, 42, 1), 0 0 8px rgba(255, 255, 255, 0.4), inset 0 0 5px rgba(255,255,255,0.8); filter: brightness(1.2); }
+            100% { box-shadow: 0 0 6px rgba(255, 42, 42, 0.6), inset 0 0 3px rgba(255,255,255,0.4); filter: brightness(1); }
+        }
+
+        @keyframes diamondGlow {
+            0% { box-shadow: 0 0 8px rgba(224, 247, 250, 0.6); filter: brightness(1); }
+            50% { box-shadow: 0 0 18px rgba(224, 247, 250, 1), 0 0 10px #fff; filter: brightness(1.4); }
+            100% { box-shadow: 0 0 8px rgba(224, 247, 250, 0.6); filter: brightness(1); }
+        }
+
+        @keyframes cosmicGlow {
+            0% { background-position: 0% 50%; box-shadow: 0 0 10px rgba(0, 242, 254, 0.6); }
+            50% { background-position: 100% 50%; box-shadow: 0 0 22px rgba(255, 0, 127, 0.9), 0 0 12px #fff; }
+            100% { background-position: 0% 50%; box-shadow: 0 0 10px rgba(0, 242, 254, 0.6); }
+        }
+
+        .vip-avatar-container { position: relative; display: inline-block; padding: 4px; border-radius: 50%; }
+
+        .header-avatar-container-clean { 
+            position: relative; 
+            display: inline-block; 
+            padding: 2px; 
+            margin-top: 4px; 
+            border-radius: 50%; 
+            overflow: visible; 
+            box-sizing: border-box;
+        }
+
+        .vip-avatar-container::after, .header-avatar-container-clean::after {
+            content: '\f521'; font-family: 'Font Awesome 5 Free'; font-weight: 900; position: absolute;
+            top: -6px; left: 50%; transform: translateX(-50%) rotate(-10deg); font-size: 11px; opacity: 0; transition: 0.3s; z-index: 5; text-shadow: 0 0 4px #000;
+        }
+        .header-avatar-container-clean::after { top: -7px; font-size: 8px; }
+
+        [data-vip="5"]::after, [data-vip="6"]::after, [data-vip="10"]::after { opacity: 1; color: var(--gold); }
+        [data-vip="7"]::after, [data-vip="8"]::after, [data-vip="11"]::after, [data-vip="12"]::after { opacity: 1; color: var(--primary); animation: pulsoVip 1s infinite alternate; }
+        [data-vip="9"]::after, [data-vip="13"]::after, [data-vip="14"]::after, [data-vip="15"]::after, [data-vip="16"]::after { opacity: 1; color: #ff007f; font-size: 12px; transform: translateX(-50%) scale(1.1); text-shadow: 0 0 6px #ff007f; }
+        .header-avatar-container-clean[data-vip="9"]::after, .header-avatar-container-clean[data-vip="16"]::after { font-size: 10px; }
+
+        .seat .vip-avatar-container::after { display: none !important; opacity: 0 !important; content: none !important; }
+        .avatar-vip-beat { border: 2px solid var(--vip-rojo) !important; animation: vipBeatGlow 1.8s infinite cubic-bezier(0.4, 0, 0.2, 1); object-fit: cover; background: #111; width: 100%; height: 100%; border-radius: 50%; box-sizing: border-box; }
+
+        img[data-vlvl="1"] { border-color: #b2bec3 !important; animation: none; }
+        img[data-vlvl="2"] { border-color: #dfe6e9 !important; animation: none; }
+        img[data-vlvl="3"] { border-color: #ffd700 !important; animation: none; }
+        img[data-vlvl="4"] { border-color: #ff9f43 !important; animation: none; }
+        img[data-vlvl="5"] { border-color: #f1c40f !important; box-shadow: 0 0 6px rgba(241,196,15,0.6); } 
+        img[data-vlvl="6"] { border-color: #9b59b6 !important; box-shadow: 0 0 6px rgba(155,89,182,0.6); }
+        img[data-vlvl="7"] { border-color: #00f2fe !important; box-shadow: 0 0 8px rgba(0,242,254,0.7); }
+        img[data-vlvl="8"] { border-color: #ff0844 !important; box-shadow: 0 0 9px rgba(255,8,68,0.8); }
+        img[data-vlvl="9"] { border-color: #ff007f !important; animation: vipBeatGlow 0.8s infinite linear; }
+        img[data-vlvl="10"] { border-color: #e0a96d !important; animation: pulsoVip 1.5s infinite alternate; }
+        img[data-vlvl="11"] { border-color: #aae7ff !important; animation: diamondGlow 1.8s infinite; }
+        img[data-vlvl="12"] { border-color: #00d2ff !important; animation: diamondGlow 1.4s infinite; }
+        img[data-vlvl="13"] { border-color: #ff3f3f !important; box-shadow: 0 0 12px #ff3f3f; }
+        img[data-vlvl="14"] { border-color: #2ed573 !important; box-shadow: 0 0 12px #2ed573; }
+        img[data-vlvl="15"] { border-color: #ffa502 !important; animation: vipBeatGlow 0.6s infinite; }
+        img[data-vlvl="16"] { border-color: #fff !important; animation: cosmicGlow 1s infinite linear; }
+        img[data-vlvl="17"] { border-color: #ff00ff !important; animation: cpGlow 0.5s infinite linear; }
+
+        @keyframes cpGlow {
+            0% { box-shadow: 0 0 15px #ff00ff, 0 0 30px #00f2fe, 0 0 45px #ffd700; filter: brightness(1.2) hue-rotate(0deg); }
+            25% { box-shadow: 0 0 20px #00f2fe, 0 0 35px #ffd700, 0 0 50px #ff00ff; filter: brightness(1.5) hue-rotate(90deg); }
+            50% { box-shadow: 0 0 25px #ffd700, 0 0 40px #ff00ff, 0 0 55px #00f2fe; filter: brightness(1.8) hue-rotate(180deg); }
+            75% { box-shadow: 0 0 20px #ff00ff, 0 0 35px #00f2fe, 0 0 50px #ffd700; filter: brightness(1.5) hue-rotate(270deg); }
+            100% { box-shadow: 0 0 15px #00f2fe, 0 0 30px #ffd700, 0 0 45px #ff00ff; filter: brightness(1.2) hue-rotate(360deg); }
+        }
+
+        .badge-v17 {
+            background: linear-gradient(45deg, #ff00ff, #00f2fe, #ffd700, #ff00ff, #00ff88, #ff00ff);
+            background-size: 600% auto;
+            animation: brilloGlow 0.8s linear infinite, cpGlow 0.5s infinite linear;
+            border: 2px solid #fff;
+            box-shadow: 0 0 20px #ff00ff, 0 0 10px #00f2fe;
+            font-size: 9px;
+            padding: 3px 8px;
+        }
+
+        .msg-vip-17 {
+            background: linear-gradient(135deg, #1a0033, #330066, #1a0033);
+            border: 2px solid #ff00ff;
+            box-shadow: 0 0 25px rgba(255, 0, 255, 0.6), 0 0 50px rgba(0, 242, 254, 0.3);
+            animation: cpGlow 2s infinite linear;
+        }
+
+        .nombre-cristal {
+            font-family: 'Orbitron', sans-serif; font-weight: 700;
+            background: linear-gradient(135deg, rgba(255, 0, 127, 0.8), rgba(0, 242, 254, 0.8), rgba(0, 255, 136, 0.8), rgba(255, 215, 0, 0.8)); background-size: 200% auto;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: brilloGlow 4s linear infinite;
+            text-shadow: 0 0 12px rgba(255,255,255,0.1), 0 0 4px rgba(0,0,0,0.6); letter-spacing: 0.5px; display: inline-flex; align-items: center;
+        }
+
+        @keyframes brilloGlow {
+            0% { background-position: 0% 50%; filter: brightness(1.2); }
+            50% { background-position: 100% 50%; filter: brightness(1.6); }
+            100% { background-position: 0% 50%; filter: brightness(1.2); }
+        }
+
+        .badge-v1 { background: linear-gradient(135deg, #bdc3c7, #2c3e50); }
+        .badge-v2 { background: linear-gradient(135deg, #eef2f3, #8e9eab); border-color: #fff; }
+        .badge-v3 { background: linear-gradient(135deg, #ffd700, #b8860b); color: #000; -webkit-text-fill-color: #000 !important; }
+        .badge-v4 { background: linear-gradient(135deg, #ff9f43, #ff4d4d, #990000); animation: pulsoVip 2s infinite alternate; }
+        .badge-v5 { background: linear-gradient(135deg, #f1c40f, #f39c12); animation: pulsoVip 1.8s infinite alternate; box-shadow: 0 0 8px rgba(241, 196, 15, 0.8); } 
+        .badge-v6 { background: linear-gradient(135deg, #9b59b6, #8e44ad); animation: pulsoVip 1.6s infinite alternate; box-shadow: 0 0 8px rgba(155, 89, 182, 0.8); }
+        .badge-v7 { background: linear-gradient(135deg, #00f2fe, #4facfe); animation: pulsoVip 1.4s infinite alternate; box-shadow: 0 0 10px rgba(0, 242, 254, 0.8); }
+        .badge-v8 { background: linear-gradient(135deg, #ff0844, #ffb199); animation: pulsoVip 1.2s infinite alternate; box-shadow: 0 0 12px rgba(255, 8, 68, 0.8); }
+        .badge-v9 { background: linear-gradient(135deg, #ff007f, #ffd700, #00f2fe); background-size: 200% auto; animation: brilloGlow 2s linear infinite, pulsoVip 1s infinite alternate; box-shadow: 0 0 15px rgba(255, 0, 127, 0.9); border: 1px solid #fff; }
+        .badge-v10 { background: linear-gradient(135deg, #e0a96d, #201a15); border: 1px solid #e0a96d; }
+        .badge-v11 { background: linear-gradient(135deg, #e0f7fa, #80deea, #b2ebf2); color: #000; -webkit-text-fill-color: #000 !important; animation: diamondGlow 2s infinite; }
+        .badge-v12 { background: linear-gradient(135deg, #00d2ff, #0066ff); box-shadow: 0 0 10px #00d2ff; }
+        .badge-v13 { background: linear-gradient(135deg, #ff3838, #710000); border: 1px solid #ff7675; box-shadow: 0 0 12px #ff3838; }
+        .badge-v14 { background: linear-gradient(135deg, #2ed573, #05c46b); box-shadow: 0 0 12px #2ed573; }
+        .badge-v15 { background: linear-gradient(135deg, #ff9f43, #ffa502, #ff4757); animation: pulsoVip 0.8s infinite alternate; box-shadow: 0 0 14px #ffa502; }
+        .badge-v16 { background: linear-gradient(45deg, #ff007f, #ffd700, #00ff88, #00f2fe, #ff007f); background-size: 400% auto; animation: brilloGlow 1.5s linear infinite, cosmicGlow 1s infinite; border: 1px solid #fff; }
+
+        @keyframes pulsoVip {
+            0% { filter: brightness(1); transform: scale(1); }
+            100% { filter: brightness(1.3); transform: scale(1.03); }
+        }
+
+        .banner-entrada-vip {
+            width: 100%; background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.25), rgba(0, 242, 254, 0.25), transparent);
+            border-top: 1px solid rgba(255,215,0,0.3); border-bottom: 1px solid rgba(0,242,254,0.3); padding: 8px 0;
+            text-align: center; font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: bold; color: #fff;
+            text-shadow: 0 0 10px rgba(255,255,255,0.6); letter-spacing: 1px; margin: 10px 0; animation: entradaBrillo 1.5s ease-out;
+        }
+        @keyframes entradaBrillo { 0% { filter: brightness(0); transform: scaleY(0); } 100% { filter: brightness(1.2); transform: scaleY(1); } }
+
+        #global-app-announcement {
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 360px;
+            background: linear-gradient(135deg, rgba(20, 10, 35, 0.95), rgba(10, 5, 20, 0.98)); border: 2px solid var(--gold);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4), inset 0 0 15px rgba(255,255,255,0.1); border-radius: 16px;
+            padding: 14px 20px; z-index: 9999; display: flex; align-items: center; gap: 15px; transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); backdrop-filter: blur(10px);
+        }
+        #global-app-announcement.show { top: 20px; }
+        .announcement-icon { font-size: 24px; color: var(--gold); animation: pulsoVip 0.6s infinite alternate; }
+        .announcement-body { flex: 1; }
+        .announcement-title { font-family: 'Orbitron', sans-serif; font-size: 11px; color: var(--primary); font-weight: bold; letter-spacing: 1px; }
+        .announcement-text { font-size: 13px; color: #fff; margin-top: 2px; }
+
+        .msg-content { 
+            padding: 6px 10px; border-radius: 12px; max-width: 210px; overflow-wrap: break-word; 
+            backdrop-filter: blur(6px); font-size: 11.5px; box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(20, 20, 20, 0.85);
+        }
+
+        .msg-vip-1, .msg-vip-2 { background: rgba(45, 52, 54, 0.85); border-left: 3px solid #b2bec3; }
+        .msg-vip-3, .msg-vip-4, .msg-vip-5 { background: rgba(45, 40, 20, 0.9); border: 1px solid rgba(251, 197, 49, 0.5); box-shadow: 0 0 12px rgba(251, 197, 49, 0.25); }
+        .msg-vip-6, .msg-vip-7, .msg-vip-8 { background: rgba(142, 68, 173, 0.2); border: 1px solid rgba(155, 89, 182, 0.6); border-right: 3px solid #9b59b6; }
+        .msg-vip-9, .msg-vip-10 { background: linear-gradient(135deg, rgba(15, 5, 25, 0.95), rgba(5, 15, 25, 0.95)); border: 1px solid transparent; border-image: linear-gradient(135deg, #ff007f, #ffd700, #00f2fe) 1; box-shadow: 0 0 18px rgba(255, 0, 127, 0.4); position: relative; }
+        .msg-vip-11, .msg-vip-12 { background: rgba(224, 247, 250, 0.1); border: 1px solid #80deea; box-shadow: 0 0 15px rgba(128, 222, 234, 0.4); }
+        .msg-vip-13, .msg-vip-14, .msg-vip-15 { background: rgba(20, 5, 5, 0.95); border-left: 4px solid #ff3838; border-right: 4px solid #ff3838; box-shadow: 0 0 20px rgba(255, 56, 56, 0.3); }
+        .msg-vip-16 { background: linear-gradient(135deg, #000, #111, #000); border: 2px dashed #fff; animation: cosmicGlow 2s infinite linear; }
+
+        /* ===== CHAT PRIVADO PROLIJO ===== */
+        .priv-msg-row { display: flex; width: 100%; margin-bottom: 8px; box-sizing: border-box; }
+        .priv-msg-row.my-msg { justify-content: flex-end; }
+        .priv-msg-row.their-msg { justify-content: flex-start; }
+        .priv-msg-bubble { max-width: 75%; padding: 10px 14px; border-radius: 16px; font-size: 13px; line-height: 1.4; box-shadow: 0 3px 10px rgba(0,0,0,0.3); position: relative; }
+        .priv-msg-row.my-msg .priv-msg-bubble { background: linear-gradient(135deg, #0055ff, #0084ff); color: #fff; border-bottom-right-radius: 4px; border: 1px solid rgba(255,255,255,0.1); }
+        .priv-msg-row.their-msg .priv-msg-bubble { background: #22222b; color: #fff; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
+        .priv-time-stamp { font-size: 8px; display: block; text-align: right; margin-top: 4px; opacity: 0.6; font-family: 'Orbitron', sans-serif; }
+
+        /* ===== CONTADOR PERMANENTE DE MENSAJES PRIVADOS ===== */
+        .priv-contador-permanente {
+            position: absolute;
+            top: 68px;
+            right: 10px;
+            background: linear-gradient(135deg, rgba(255, 0, 127, 0.85), rgba(0, 242, 254, 0.85));
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 20px;
+            padding: 2px 6px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 7px;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 4px rgba(255,255,255,0.4);
+            box-shadow: 0 0 6px rgba(255, 0, 127, 0.3), inset 0 0 3px rgba(255,255,255,0.08);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            animation: brilloGlow 3s linear infinite;
+            backdrop-filter: blur(4px);
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+        }
+        .priv-contador-permanente i { font-size: 6px; }
+        .priv-contador-permanente .contador-numero { font-size: 8px; color: var(--gold); }
+
+        #login-screen { 
+            position: fixed; inset: 0; background: #010801; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; z-index: 3000; 
+        }
+        #matrix-canvas { position: absolute; inset: 0; z-index: 1; opacity: 0.55; }
+        .login-scanline { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,255,65,0.025) 0px, rgba(0,255,65,0.025) 1px, transparent 1px, transparent 3px); }
+
+        .login-card { background: rgba(0, 14, 5, 0.88); backdrop-filter: blur(12px); padding: 35px 25px; border-radius: 20px; text-align: center; width: 85%; max-width: 340px; box-shadow: 0 0 35px rgba(0,255,65,0.2), 0 20px 40px rgba(0,0,0,0.7); border: 1px solid rgba(0,255,65,0.45); box-sizing: border-box; position: relative; z-index: 3; animation: loginHackerGlow 3s ease-in-out infinite; }
+        @keyframes loginHackerGlow {
+            0%, 100% { box-shadow: 0 0 25px rgba(0,255,65,0.15), 0 20px 40px rgba(0,0,0,0.7); border-color: rgba(0,255,65,0.35); }
+            50% { box-shadow: 0 0 45px rgba(0,255,65,0.35), 0 20px 40px rgba(0,0,0,0.7); border-color: rgba(0,255,65,0.7); }
+        }
+        .login-card h2 { font-family: 'Orbitron', sans-serif; font-weight: 700; color: #00ff41; margin: 0 0 6px 0; font-size: 24px; letter-spacing: 4px; text-shadow: 0 0 15px rgba(0,255,65,0.8); }
+        .login-avatar-click-wrapper { position: relative; width: 120px; height: 120px; margin: 0 auto 25px auto; cursor: pointer; }
+        .login-avatar-click-wrapper img { width: 100%; height: 100%; border-radius: 50%; background: #031b0a; object-fit: cover; border: 3px solid rgba(0,255,65,0.6); box-shadow: 0 0 25px rgba(0,255,65,0.35), 0 8px 20px rgba(0,0,0,0.5); box-sizing: border-box; }
+        .login-input-wrapper { position: relative; width: 100%; margin-bottom: 15px; box-sizing: border-box; }
+        .login-input-wrapper i { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #00ff41; font-size: 16px; text-shadow: 0 0 8px rgba(0,255,65,0.6); }
+        .login-input-wrapper input { width: 100%; padding: 14px 20px 14px 50px; border-radius: 12px; border: 1px solid rgba(0,255,65,0.35); background: rgba(0, 25, 8, 0.85); color: #00ff41; outline: none; font-family: 'Courier New', monospace; font-size: 14px; font-weight: 600; box-sizing: border-box; box-shadow: inset 0 2px 6px rgba(0,0,0,0.5); }
+        .login-input-wrapper input:focus { border-color: #00ff41; box-shadow: 0 0 15px rgba(0,255,65,0.3), inset 0 2px 6px rgba(0,0,0,0.5); }
+        .login-input-wrapper input::placeholder { color: rgba(0,255,65,0.45); font-weight: 400; }
+        .btn-login-capsule { background: #00c236; width: 100%; border: 1px solid rgba(255,255,255,0.2); padding: 14px; border-radius: 12px; font-weight: 700; color: #001503; cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 2px; margin-top: 10px; transition: all 0.2s; box-shadow: 0 0 20px rgba(0,255,65,0.35); }
+        .btn-login-capsule:hover { background: #00ff41; box-shadow: 0 0 30px rgba(0,255,65,0.6); }
+        .btn-login-capsule:active { transform: scale(0.97); }
+
+        .header { padding: 5px 12px; background: rgba(10, 10, 10, 0.95); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; position: relative; gap: 10px; height: 52px; box-sizing: border-box; }
+
+        .header-avatars-inline { display: flex; align-items: center; gap: 8px; overflow-x: auto; flex: 1; height: 100%; padding: 2px 0; scrollbar-width: none; }
+        .header-avatars-inline::-webkit-scrollbar { display: none; }
+
+        .user-online-btn-header { 
+            background: none; 
+            border: none; 
+            padding: 0; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            flex-shrink: 0; 
+            width: 30px; 
+            height: 30px; 
+            border-radius: 50%; 
+            overflow: hidden; 
+            box-sizing: border-box;
+        }
+
+        .user-online-btn-header img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .user-online-btn-header:active { transform: scale(0.85); }
+        .header-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; position: relative; }
+
+        .btn-header-action { background: none; border: none; color: white; font-size: 14px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: 0.2s; border-radius: 50%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); position: relative; }
+        .btn-header-action:active { transform: scale(0.9); opacity: 0.7; }
+        .btn-users-style { color: var(--accent); background: rgba(0, 255, 136, 0.1); border-color: rgba(0, 255, 136, 0.2); }
+        .badge-count { position: absolute; top: -4px; right: -4px; background: var(--accent); color: #000; font-size: 9px; font-weight: bold; border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; box-shadow: 0 0 4px var(--accent); }
+
+        .dropdown-menu { position: absolute; top: 48px; right: 0px; background: rgba(15, 15, 15, 0.98); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; width: 240px; display: none; flex-direction: column; z-index: 6000; box-shadow: 0 10px 25px rgba(0,0,0,0.7); backdrop-filter: blur(10px); overflow: hidden; }
+        .dropdown-item { background: none; border: none; color: white; padding: 12px 15px; text-align: left; font-size: 13px; font-family: 'Poppins', sans-serif; cursor: pointer; display: flex; align-items: center; gap: 10px; width: 100%; transition: 0.2s; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .dropdown-item:active { background: rgba(255,255,255,0.1); }
+        .dropdown-item.item-danger { color: var(--danger); font-weight: 600; }
+        .dropdown-item.item-info { color: var(--accent); font-weight: 600; }
+        .dropdown-item.item-warning { color: var(--gold); }
+
+        #lista-online { position: fixed; top: 65px; right: 15px; background: rgba(0, 0, 0, 0.95); border: 1px solid var(--accent); border-radius: 15px; padding: 15px; display: none; z-index: 5000; width: 250px; max-height: 300px; overflow-y: auto; backdrop-filter: blur(10px); box-shadow: 0 0 15px rgba(0, 255, 136, 0.2); }
+        .user-online-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding: 5px; border-bottom: 1px solid #222; cursor: pointer; transition: 0.2s; }
+        .user-online-item:active { background: rgba(255,255,255,0.05); }
+        .user-online-avatar { width: 32px; height: 32px; border-radius: 50%; }
+        .user-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 5px var(--accent); margin-left: auto; }
+
+        .video-section { width: 95%; max-width: 750px; margin: 10px auto; z-index: 10; }
+        .video-box { position: relative; padding-bottom: 56.25%; height: 0; background: #111; border-radius: 15px; overflow: hidden; border: 1px solid #333; }
+        .video-box iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+
+        .seats-wrapper { display: flex; justify-content: center; gap: 24px; padding: 12px 10px; z-index: 10; max-width: 400px; margin: 0 auto; }
+        .seat { width: 54px; height: 54px; background: linear-gradient(145deg, rgba(255,255,255,0.09), rgba(255,255,255,0.02)); border: 1px solid rgba(0, 242, 254, 0.35); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1); backdrop-filter: blur(8px); }
+        .seat::before { content: ''; position: absolute; inset: -2px; border-radius: 50%; background: linear-gradient(135deg, rgba(0,242,254,0.5), rgba(255,0,127,0.35), rgba(0,255,136,0.3)); z-index: -1; filter: blur(7px); opacity: 0.45; transition: 0.3s; }
+        .seat img { width: 100%; height: 100%; border-radius: 50%; }
+        .seat.active { border-color: var(--primary); box-shadow: 0 0 22px rgba(0, 242, 254, 0.55), inset 0 0 12px rgba(0, 242, 254, 0.2); }
+        .seat.active::before { opacity: 1; filter: blur(10px); }
+
+        .seat .seat-label-clean { 
+            position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+            white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; z-index: 10;
+        }
+        .seat .seat-label-clean span { font-size: 11px; font-weight: bold; color: #fff; font-family: 'Orbitron', sans-serif; }
+        .seat .seat-label-clean span.nombre-cristal { font-size: 9px; max-width: 60px; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
+
+        #menu-asiento-acciones { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 10, 10, 0.98); border-top: 2px solid var(--primary); border-radius: 20px 20px 0 0; padding: 20px; box-sizing: border-box; display: none; flex-direction: column; gap: 10px; z-index: 5500; box-shadow: 0 -5px 25px rgba(0,0,0,0.8); backdrop-filter: blur(15px); }
+        .btn-asiento-opcion { width: 100%; padding: 14px; border: none; border-radius: 12px; font-family: 'Poppins'; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; }
+        .btn-asiento-opcion:active { transform: scale(0.97); }
+
+        #chat-area { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 10; margin-top: 25px; margin-bottom: 95px; content-visibility: auto; }
+        .chat-avatar-click { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; transition: 0.2s; }
+        .chat-avatar-click:active { transform: scale(0.85); filter: brightness(0.8); }
+
+        .chat-img { width: 100%; max-width: 170px; border-radius: 8px; margin-top: 4px; cursor: pointer; }
+        .sys-msg { text-align: center; width: 100%; font-size: 11px; color: var(--accent); font-style: italic; margin: 5px 0; }
+
+        .chat-user-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 52px;
+            flex-shrink: 0;
+            text-align: center;
+        }
+        .chat-user-block .nombre-debajo-avatar {
+            font-size: 8.5px;
+            margin-top: 3px;
+            max-width: 52px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            line-height: 1.1;
+        }
+
+        .footer-container { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; flex-direction: column; background: rgba(10, 10, 10, 0.98); z-index: 2000; border-top: 1px solid #252525; padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+        #typing-indicator { height: 14px; font-size: 11px; color: var(--accent); padding-left: 15px; font-style: italic; margin-top: 4px; font-weight: 600; }
+        .footer { padding: 6px 14px; display: flex; gap: 12px; align-items: center; width: 100%; box-sizing: border-box; }
+        .btn-footer-secondary { width: 44px; height: 44px; border-radius: 50%; background: #1f1f1f; border: 1px solid #3a3a3a; color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s; box-sizing: border-box; }
+        .btn-footer-secondary:active { transform: scale(0.9); background: #2b2b2b; }
+
+        #msg-in { flex: 1; background: #1f1f1f; border: 1px solid #3a3a3a; padding: 12px 16px; border-radius: 24px; color: white; outline: none; font-family: 'Poppins', sans-serif; font-size: 14px; min-width: 0; box-sizing: border-box; }
+        #msg-in:focus { border-color: var(--primary); background: #151515; }
+        .btn-send-round { width: 44px; height: 44px; border-radius: 50%; background: var(--primary); color: #000; border: none; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s; box-sizing: border-box; }
+        .btn-send-round:active { transform: scale(0.9); opacity: 0.8; }
+
+        #modal-perfil { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 20px; }
+
+        .prestige-card { 
+            background: linear-gradient(135deg, rgba(12, 12, 20, 0.98), rgba(5, 5, 10, 0.99)); padding: 22px; border-radius: 24px; text-align: center; width: 95%; max-width: 350px; box-sizing: border-box; position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9); 
+        }
+
+        .card-avatar-frame { position: relative; width: 100%; max-height: 180px; overflow: hidden; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.1); background: #080808; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+        .card-avatar-frame img { width: 100%; height: auto; max-height: 180px; object-fit: contain; display: block; }
+
+        .card-rank-tag { font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #aaa; margin-top: 2px; }
+        .card-bio-text { font-size: 13px; color: rgba(255, 255, 255, 0.85); line-height: 1.5; background: rgba(255, 255, 255, 0.04); padding: 12px 16px; border-radius: 12px; width: 100%; box-sizing: border-box; border: 1px solid rgba(255, 255, 255, 0.06); text-align: left; }
+        .card-actions-wrapper { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+        .btn-card-action { width: 100%; padding: 12px; border: none; border-radius: 12px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; }
+        .btn-card-action:active { transform: scale(0.97); }
+
+        #modal-editar-perfil { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 20px; }
+        .profile-card { background: #111; padding: 25px; border-radius: 20px; text-align: center; width: 100%; max-width: 340px; border: 1px solid var(--primary); display: flex; flex-direction: column; align-items: center; gap: 12px; box-sizing: border-box; }
+        .profile-card .profile-avatar-wrapper { position: relative; width: 130px; height: 130px; margin-top: 15px; }
+        .profile-card .profile-avatar-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .profile-card input { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #222; color: white; outline: none; font-family: 'Poppins'; font-size: 13px; box-sizing: border-box; }
+        .btn-action-modal { width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-family: 'Poppins'; font-size: 13px; transition: 0.2s; box-sizing: border-box; }
+        .btn-action-modal:active { transform: scale(0.96); }
+
+        #modal-visor-foto {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px); display: none; align-items: center;
+            justify-content: center; z-index: 9000; padding: 10px;
+        }
+        #modal-visor-foto img {
+            max-width: 100%; max-height: 90vh; object-fit: contain;
+            border-radius: 8px; box-shadow: 0 0 30px rgba(255,255,255,0.1);
+            animation: entradaFoto 0.25s ease-out;
+        }
+        @keyframes entradaFoto { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        #modal-chat-privado {
+            position: fixed; inset: 0; background: rgba(5, 5, 10, 0.98);
+            backdrop-filter: blur(20px); display: none; flex-direction: column; z-index: 4500;
+        }
+        .priv-header {
+            padding: 12px 20px; background: rgba(15, 15, 25, 0.95);
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid #222; height: 60px; box-sizing: border-box;
+        }
+        #priv-chat-area {
+            flex: 1; overflow-y: auto; padding: 15px; display: flex;
+            flex-direction: column; gap: 10px; margin-bottom: 75px; margin-top: 40px;
+        }
+        .priv-footer {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            padding: 10px 15px; display: flex; gap: 8px; align-items: center;
+            background: rgba(10, 10, 15, 0.98); border-top: 1px solid #222; box-sizing: border-box; height: 65px;
+        }
+        #priv-msg-in { flex: 1; background: #1f1f1f; border: 1px solid #3a3a3a; padding: 10px 16px; border-radius: 24px; color: white; outline: none; font-family: 'Poppins', sans-serif; font-size: 13px; min-width: 0; box-sizing: border-box; }
+        #priv-msg-in:focus { border-color: var(--primary); background: #151515; }
+        #priv-typing-indicator {
+            position: absolute; bottom: 68px; left: 20px; font-size: 11px;
+            color: var(--accent); font-style: italic; font-weight: 600; height: 14px; z-index: 10;
+        }
+    
+        /* ===== SISTEMA CP DE PAREJA - ANILLO DE COMPROMISO ===== */
+        @keyframes heartFloat {
+            0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+            50% { transform: translateY(-60px) scale(1.3) rotate(10deg); opacity: 0.8; }
+            100% { transform: translateY(-120px) scale(0.5) rotate(-10deg); opacity: 0; }
+        }
+        @keyframes ringPulse {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.15); filter: brightness(1.5) drop-shadow(0 0 20px #ffd700); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+        @keyframes ringGlow {
+            0% { box-shadow: 0 0 10px #ffd700, 0 0 20px #ff007f; }
+            50% { box-shadow: 0 0 30px #ffd700, 0 0 50px #ff007f, 0 0 70px #00f2fe; }
+            100% { box-shadow: 0 0 10px #ffd700, 0 0 20px #ff007f; }
+        }
+        @keyframes fadeInScale {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        .heart-particle {
+            position: absolute;
+            font-size: 20px;
+            animation: heartFloat 2.5s ease-out forwards;
+            pointer-events: none;
+            z-index: 10000;
+        }
+
+        #modal-anillo-cp {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 0, 15, 0.95);
+            backdrop-filter: blur(20px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            flex-direction: column;
+            animation: fadeInScale 0.6s ease-out;
+        }
+
+        .anillo-cp-card {
+            background: linear-gradient(135deg, rgba(20, 5, 30, 0.98), rgba(10, 0, 20, 0.99));
+            border: 3px solid;
+            border-image: linear-gradient(135deg, #ffd700, #ff007f, #00f2fe, #ffd700) 1;
+            border-radius: 24px;
+            padding: 35px 30px;
+            text-align: center;
+            max-width: 340px;
+            width: 90%;
+            box-shadow: 0 0 50px rgba(255, 0, 127, 0.4), 0 0 80px rgba(255, 215, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .anillo-cp-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.03), transparent);
+            animation: shimmer 3s linear infinite;
+        }
+
+        /* ===== BOTÓN X PARA CERRAR ===== */
+        .anillo-cerrar-x {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            background: rgba(255, 56, 96, 0.2);
+            border: 1px solid rgba(255, 56, 96, 0.4);
+            color: rgba(255, 255, 255, 0.7);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 10;
+            font-family: 'Poppins', sans-serif;
+            padding: 0;
+            line-height: 1;
+        }
+        .anillo-cerrar-x:hover {
+            background: rgba(255, 56, 96, 0.5);
+            color: #fff;
+            transform: scale(1.1);
+        }
+        .anillo-cerrar-x:active {
+            transform: scale(0.9);
+        }
+
+        .anillo-icono {
+            font-size: 72px;
+            margin-bottom: 15px;
+            animation: ringPulse 2s infinite ease-in-out;
+            display: inline-block;
+            filter: drop-shadow(0 0 15px #ffd700);
+        }
+
+        .anillo-titulo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffd700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .anillo-subtitulo {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .anillo-nombres {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            background: linear-gradient(135deg, #ff007f, #ffd700, #00f2fe);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: brilloGlow 3s linear infinite;
+            margin-bottom: 20px;
+            padding: 8px 15px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        .btn-anillo-aceptar {
+            background: linear-gradient(135deg, #ff007f, #ff0844);
+            border: none;
+            color: white;
+            padding: 14px 30px;
+            border-radius: 30px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            margin: 8px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(255, 0, 127, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-anillo-aceptar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 30px rgba(255, 0, 127, 0.7);
+        }
+        .btn-anillo-aceptar:active { transform: scale(0.95); }
+
+        .btn-anillo-rechazar {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            cursor: pointer;
+            margin: 8px;
+            transition: all 0.3s;
+        }
+        .btn-anillo-rechazar:hover {
+            background: rgba(255, 56, 96, 0.2);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .anillo-estado-espera {
+            font-size: 11px;
+            color: #00f2fe;
+            margin-top: 15px;
+            font-style: italic;
+            animation: pulsoVip 2s infinite alternate;
+        }
+
+        /* ===== BADGE CP POR NIVELES ===== */
+        .badge-cp-pareja {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 5px;
+            padding: 1px 2px;
+            border-radius: 4px;
+            margin-left: 2px;
+            border: 1px solid #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 12px;
+            height: 9px;
+            letter-spacing: 0.2px;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        /* Nivel 1 CP - Amarillo/Dorado (default) */
+        .badge-cp-nivel-1 {
+            background: linear-gradient(135deg, #ffd700, #ffaa00, #ffd700);
+            background-size: 200% auto;
+            animation: brilloGlow 2s linear infinite;
+            color: #000 !important;
+            -webkit-text-fill-color: #000 !important;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+            border-color: #ffd700;
+        }
+
+        /* Nivel 2 CP - Rosa/Dorado */
+        .badge-cp-nivel-2 {
+            background: linear-gradient(135deg, #ff007f, #ffd700, #ff007f);
+            background-size: 200% auto;
+            animation: brilloGlow 2s linear infinite;
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
+            border-color: #ff007f;
+        }
+
+        /* Nivel 3 CP - Cósmico */
+        .badge-cp-nivel-3 {
+            background: linear-gradient(45deg, #ff007f, #ffd700, #00f2fe, #00ff88, #ff007f);
+            background-size: 400% auto;
+            animation: brilloGlow 1.5s linear infinite, cosmicGlow 1s infinite;
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.6);
+            border-color: #fff;
+        }
+
+        /* Nivel 4 CP - Máximo brillo */
+        .badge-cp-nivel-4 {
+            background: linear-gradient(45deg, #ff00ff, #00f2fe, #ffd700, #00ff88, #ff00ff);
+            background-size: 600% auto;
+            animation: brilloGlow 0.8s linear infinite, cpGlow 0.5s infinite linear;
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+            box-shadow: 0 0 20px #ff00ff, 0 0 10px #00f2fe;
+            border: 2px solid #fff;
+        }
+
+        .avatar-cp-marco {
+            position: relative;
+            display: inline-block;
+        }
+        .avatar-cp-marco::after {
+            content: '💍';
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            font-size: 12px;
+            filter: drop-shadow(0 0 4px #ffd700);
+            animation: ringPulse 2s infinite;
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .mensaje-cp-celebracion {
+            background: linear-gradient(135deg, #1a0033, #330066, #1a0033) !important;
+            border: 2px solid #ffd700 !important;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), 0 0 60px rgba(255, 0, 127, 0.3) !important;
+            animation: ringGlow 2s infinite !important;
+        }
+
+        .priv-msg-bubble.cp-bubble {
+            background: linear-gradient(135deg, #ff007f, #ff0844) !important;
+            border: 2px solid #ffd700 !important;
+            box-shadow: 0 0 20px rgba(255, 0, 127, 0.5) !important;
+        }
+
+        .msg-delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: rgba(255, 56, 96, 0.9);
+            border: 1px solid rgba(255, 56, 96, 0.5);
+            color: white;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 9px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 20;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: 0 2px 5px rgba(255, 56, 96, 0.4);
+        }
+        .msg-delete-btn:hover {
+            background: #ff0844;
+            transform: scale(1.1);
+        }
+        .msg-content:hover .msg-delete-btn {
+            opacity: 1;
+        }
+        .msg-content {
+            position: relative;
+        }
+
+        /* ===== AVATARES SIN CORONA Y SIN ROSADO (neón cian) ===== */
+        .vip-avatar-container::after, .header-avatar-container-clean::after { content: none !important; display: none !important; opacity: 0 !important; }
+        img.avatar-vip-beat, img[data-vlvl] { border-color: rgba(0, 242, 254, 0.85) !important; animation: avatarNeonPulse 2.2s infinite ease-in-out !important; box-shadow: 0 0 10px rgba(0, 242, 254, 0.35) !important; }
+        @keyframes avatarNeonPulse {
+            0%, 100% { box-shadow: 0 0 8px rgba(0, 242, 254, 0.3); filter: brightness(1); }
+            50% { box-shadow: 0 0 16px rgba(0, 242, 254, 0.65), 0 0 5px rgba(255,255,255,0.25); filter: brightness(1.15); }
+        }
+    </style>
+    <!-- 🔊 YouTube IFrame Player API para control de volumen -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+</head>
+<body>
+    <input type="file" id="bg-in" accept="image/*" style="display:none" onchange="changeBg(this)">
+    <input type="file" id="chat-pic-in" accept="image/*" style="display:none" onchange="sendPhoto(this)">
+    <input type="file" id="priv-pic-in" accept="image/*" style="display:none" onchange="sendPhotoPrivada(this)">
+    <input type="file" id="sala-music-in" accept="audio/*" style="display:none" onchange="subirMusicaSala(this)">
+    <input type="file" id="edit-pic-in" accept="image/*" style="display:none" onchange="previewEdit(this)">
+    <input type="file" id="voice-note-in" accept="audio/*" style="display:none" onchange="subirNotaVoz(this)">
+
+    <audio id="global-room-player" style="display:none;" autoplay controls></audio>
+
+    <div id="modal-visor-foto" onclick="this.style.display='none'">
+        <img id="foto-completa-src" src="" alt="Vista Completa">
+    </div>
+
+    <div id="modal-chat-privado">
+        <div class="priv-header" style="padding: 8px 12px; gap: 6px; flex-direction: column; align-items: stretch; height: auto;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-shrink: 0; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; min-width: 0; max-width: 55%;">
+                    <img id="priv-header-img" src="" style="width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;" class="avatar-vip-beat">
+                    <span id="priv-header-name" class="nombre-cristal" style="font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: flex; align-items: center;"></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                    <button onclick="clearChatPrivado()" style="background: rgba(255,159,67,0.1); border: 1px solid #ff9f43; color: #ff9f43; padding: 3px 7px; border-radius: 16px; cursor: pointer; font-size: 9px; font-family:'Poppins'; display: flex; align-items: center; gap: 3px; white-space: nowrap; flex-shrink: 0;">
+                        <i class="fas fa-trash-alt" style="font-size:8px;"></i> Borrar
+                    </button>
+                    <button onclick="resetContadorPrivado()" style="background: rgba(255,0,127,0.1); border: 1px solid #ff007f; color: #ff007f; padding: 3px 7px; border-radius: 16px; cursor: pointer; font-size: 9px; font-family:'Poppins'; display: flex; align-items: center; gap: 3px; white-space: nowrap; flex-shrink: 0;">
+                        <i class="fas fa-redo" style="font-size:8px;"></i> Reset
+                    </button>
+                    <button onclick="cerrarChatPrivado()" style="background: none; border: 1px solid #ff3860; color: #ff3860; padding: 3px 8px; border-radius: 16px; cursor: pointer; font-size: 9px; font-family:'Poppins'; white-space: nowrap; flex-shrink: 0;">Volver</button>
+                </div>
+            </div>
+            <!-- BARRA DE PROGRESO CP EN CHAT PRIVADO -->
+            <div id="priv-progreso-cp-box" style="width:100%; margin-top:4px; display:none;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+                    <span style="font-size:8px; color:#aaa; font-family:'Orbitron'; letter-spacing:0.5px;">PROGRESO CP</span>
+                    <span id="priv-progreso-texto" style="font-size:8px; color:#ffd700; font-family:'Orbitron';">0 / 1000</span>
+                </div>
+                <div style="width:100%; height:6px; background:#1a1a2e; border-radius:3px; overflow:hidden; border:1px solid #333;">
+                    <div id="priv-barra-progreso" style="width:0%; height:100%; background:linear-gradient(90deg, #ff00ff, #00f2fe, #ffd700); border-radius:3px; transition:width 0.5s ease;"></div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- CONTADOR PERMANENTE DE MENSAJES PRIVADOS -->
+        <div id="priv-contador-box" class="priv-contador-permanente">
+            <span id="priv-contador-corazon" style="font-size:10px;">❤️</span>
+            <span id="priv-contador-texto">Puntos:</span>
+            <span id="priv-contador-numero" class="contador-numero">0</span>
+            <span style="opacity:0.7;">/ 1000</span>
+        </div>
+
+        <div id="priv-chat-area"></div>
+        <div id="priv-typing-indicator"></div>
+        <div class="priv-footer">
+            <button id="priv-mic-btn" class="btn-footer-secondary" onmousedown="recStartPriv()" onmouseup="recStopPriv()" ontouchstart="recStartPriv()" ontouchend="recStopPriv()"><i class="fas fa-microphone"></i></button>
+            <button class="btn-footer-secondary" onclick="document.getElementById('priv-pic-in').click()"><i class="fas fa-image"></i></button>
+            <input type="text" id="priv-msg-in" placeholder="Escribe un mensaje privado..." oninput="handleTypingPriv()">
+            <button class="btn-send-round" onclick="sendPriv()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <div id="global-app-announcement">
+        <div class="announcement-icon"><i class="fas fa-bullhorn"></i></div>
+        <div class="announcement-body">
+            <div class="announcement-title">ANUNCIO GLOBAL DEL SISTEMA</div>
+            <div id="announcement-text-content" class="announcement-text">Un usuario actualizó sus privilegios.</div>
+        </div>
+    </div>
+
+    <div id="lista-online">
+        <h4 style="margin:0 0 10px 0; font-size:12px; color:var(--accent); font-family:'Orbitron';">EN LÍNEA</h4>
+        <div id="usuarios-lista"></div>
+        <button onclick="document.getElementById('lista-online').style.display='none'" style="width:100%; background:none; border:1px solid #444; color:white; font-size:10px; margin-top:10px; border-radius:5px; padding:5px; cursor:pointer;">Cerrar</button>
+    </div>
+
+    <div id="menu-asiento-acciones">
+        <h3 id="asiento-menu-titulo" style="font-family:'Orbitron'; color:var(--primary); text-align:center; margin:0 0 10px 0; font-size:15px;">ASIENTO VIP</h3>
+        <button class="btn-asiento-opcion" style="background:var(--primary); color:#000;" onclick="menuAccionSubir()">
+            <i class="fas fa-chair"></i> SUBIR ASIENTO
+        </button>
+        <button class="btn-asiento-opcion" style="background:#e67e22; color:#fff;" onclick="menuAccionBajar()">
+            <i class="fas fa-user-minus"></i> BAJAR ASIENTO
+        </button>
+        <button class="btn-asiento-opcion" style="background:var(--danger); color:#fff;" onclick="cerrarMenuAsiento()">
+            <i class="fas fa-lock"></i> CERRAR ASIENTO
+        </button>
+    </div>
+
+    <div id="modal-perfil">
+        <div id="prestige-card-element" class="prestige-card">
+            <i class="fas fa-crown" style="position: absolute; top: 15px; right: 20px; font-size: 20px; color: rgba(255,215,0,0.2); z-index: 10;"></i>
+            <div id="p-avatar-wrap" class="card-avatar-frame"><img id="p-img" src="" alt="Avatar VIP"></div>
+            <div id="p-rank-tag" class="card-rank-tag">MEMBRESÍA VIP</div>
+            <h3 id="p-name" class="nombre-cristal" style="margin: 0; font-size: 20px; text-align: center;"></h3>
+            <div style="font-size: 11px; color: var(--accent); font-family:'Orbitron';" id="p-mensajes">Puntos: 0</div>
+            <div id="p-progreso-cp" style="width:100%; margin-top:6px;">
+                <div style="font-size:9px; color:#aaa; margin-bottom:3px; font-family:'Orbitron';">PROGRESO CP</div>
+                <div style="width:100%; height:8px; background:#222; border-radius:4px; overflow:hidden; border:1px solid #333;">
+                    <div id="p-barra-progreso" style="width:0%; height:100%; background:linear-gradient(90deg, #ff00ff, #00f2fe, #ffd700); border-radius:4px; transition:width 0.5s ease;"></div>
+                </div>
+                <div id="p-texto-progreso" style="font-size:9px; color:#ffd700; margin-top:3px; text-align:center; font-family:'Orbitron';">0 / 1000 puntos</div>
+            </div>
+            <div id="p-bio" class="card-bio-text"></div>
+
+            <div class="card-actions-wrapper">
+                <button id="btn-privado-este-usuario" class="btn-card-action" style="background: var(--primary); color: #000;" onclick="abrirChatPrivadoDesdePerfil()">
+                    <i class="fas fa-comments"></i> Enviar Mensaje Privado
+                </button>
+                <button id="btn-subir-este-usuario" class="btn-card-action" style="background: var(--accent); color: #000;" onclick="subirUsuarioSeleccionado()">
+                    <i class="fas fa-chair"></i> Sentar en Espacio VIP
+                </button>
+                <button id="btn-bajar-este-usuario" class="btn-card-action" style="background: #e67e22; color: #fff;" onclick="bajarUsuarioSeleccionado()">
+                    <i class="fas fa-user-minus"></i> Remover del Asiento
+                </button>
+                <button id="btn-expulsar-este-usuario" class="btn-card-action" style="background: linear-gradient(135deg, #ff0844, #ff3860); color: #fff;" onclick="expulsarUsuarioSeleccionado()">
+                    <i class="fas fa-user-slash"></i> Expulsar de la Sala
+                </button>
+                <button onclick="document.getElementById('modal-perfil').style.display='none'" class="btn-card-action" style="background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.1);">
+                    Regresar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-editar-perfil">
+        <div class="profile-card" style="border-color: var(--accent);">
+            <h3 style="font-family: 'Orbitron'; color: var(--accent); margin: 0;">EDITAR MI PERFIL</h3>
+            <div class="profile-avatar-wrapper"><img id="edit-p-prev" class="avatar-vip-beat" src=""></div>
+            <button onclick="document.getElementById('edit-pic-in').click()" style="background:none; border:1px solid #555; color:white; padding:4px 10px; font-size:11px; cursor:pointer; border-radius: 5px; margin-top:5px;">Cambiar Foto</button>
+            <input type="text" id="edit-p-nick" placeholder="Tu nuevo nombre...">
+            <input type="text" id="edit-p-bio" placeholder="Tu nueva biografía...">
+            <button class="btn-action-modal" style="background: var(--accent); color: #000;" onclick="guardarMiPerfilEditado()"><i class="fas fa-save"></i> GUARDAR CAMBIOS</button>
+            <button onclick="document.getElementById('modal-editar-perfil').style.display='none'" class="btn-action-modal" style="background:var(--danger); color:white;">CANCELAR</button>
+        </div>
+    </div>
+
+        <!-- ===== PANTALLA DE INFECCIÓN VIRUS ===== -->
+    <div id="virus-infection-screen" style="position:fixed; inset:0; background:#000; z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'Courier New', monospace; overflow:hidden;">
+        <div style="position:absolute; inset:0; background:repeating-linear-gradient(0deg, rgba(0,255,0,0.03) 0px, rgba(0,255,0,0.03) 1px, transparent 1px, transparent 2px); pointer-events:none;"></div>
+        <div style="text-align:center; max-width:90%; z-index:2;">
+            <div style="font-size:48px; margin-bottom:20px; animation:pulseVirus 0.5s infinite alternate;">☠️</div>
+            <div style="font-family:'Orbitron',sans-serif; font-size:22px; color:#00ff00; text-shadow:0 0 20px #00ff00; margin-bottom:10px; letter-spacing:4px;">HACKERS VIP</div>
+            <div style="font-size:12px; color:#ff3860; text-shadow:0 0 10px #ff3860; margin-bottom:30px; font-weight:bold; letter-spacing:2px;">INFECTANDO SISTEMA...</div>
+
+            <div id="virus-terminal" style="background:rgba(0,20,0,0.9); border:1px solid #00ff00; border-radius:8px; padding:15px; text-align:left; max-width:320px; margin:0 auto; min-height:120px; font-size:10px; color:#00ff00; line-height:1.6; box-shadow:0 0 20px rgba(0,255,0,0.2); overflow:hidden;"></div>
+
+            <div style="margin-top:25px; width:280px; height:4px; background:#111; border-radius:2px; overflow:hidden; margin-left:auto; margin-right:auto; border:1px solid #00ff00;">
+                <div id="virus-progress" style="width:0%; height:100%; background:linear-gradient(90deg, #00ff00, #00f2fe); box-shadow:0 0 10px #00ff00; transition:width 0.1s linear;"></div>
+            </div>
+            <div id="virus-percent" style="font-size:11px; color:#00ff00; margin-top:8px; font-family:'Orbitron',sans-serif;">0%</div>
+        </div>
+    </div>
+    <style>
+        @keyframes pulseVirus {
+            0% { transform:scale(1); filter:brightness(1); }
+            100% { transform:scale(1.2); filter:brightness(1.5) drop-shadow(0 0 15px #ff3860); }
+        }
+        @keyframes glitchVirus {
+            0% { transform:translate(0); }
+            20% { transform:translate(-2px,2px); }
+            40% { transform:translate(2px,-2px); }
+            60% { transform:translate(-2px,-2px); }
+            80% { transform:translate(2px,2px); }
+            100% { transform:translate(0); }
+        }
+        .virus-glitch { animation:glitchVirus 0.1s infinite; }
+    </style>
+
+    <div id="login-screen">
+        <canvas id="matrix-canvas"></canvas>
+        <div class="login-scanline"></div>
+        <div class="login-card">
+            <h2>HACKERS VIP</h2>
+            <div style="font-size:10px; color:#00ff41; font-family:'Courier New', monospace; letter-spacing:2px; margin-bottom:20px;">&gt; acceso_no_autorizado.exe <span style="animation: pulseVirus 0.7s infinite alternate;">▌</span></div>
+            <div class="login-avatar-click-wrapper" onclick="document.getElementById('pic-in').click()"><img id="prev" src="https://cdn-icons-png.flaticon.com/512/149/149071.png"></div>
+            <input type="file" id="pic-in" accept="image/*" onchange="preview(this)" style="display:none">
+            <div class="login-input-wrapper"><i class="fas fa-user-secret"></i><input type="text" id="nick" placeholder="&gt; ingresa_tu_alias"></div>
+            <div class="login-input-wrapper"><i class="fas fa-terminal"></i><input type="text" id="bio" placeholder="&gt; biografia_opcional"></div>
+            <button class="btn-login-capsule" onclick="access()">⚡ ACCEDER AL SISTEMA</button>
+        </div>
+    </div>
+
+    <div id="main-app" style="display: none; flex-direction: column; height: 100vh;">
+        <div class="header">
+            <span style="font-family:'Orbitron',sans-serif; font-size:14px; font-weight:700; color:var(--danger); text-shadow:0 0 8px rgba(255,56,96,0.6); letter-spacing:2px; flex-shrink:0;">HACKERS</span>
+            <div id="header-avatars-container" class="header-avatars-inline"></div>
+            <div class="header-controls">
+                <button class="btn-header-action btn-users-style" onclick="verConectados()"><i class="fas fa-users"></i><div id="global-user-badge" class="badge-count">0</div></button>
+                <button class="btn-header-action" onclick="toggleMenuTop()" style="color:white;"><i class="fas fa-ellipsis-v"></i></button>
+            </div>
+
+            <div id="dropdownMenuTop" class="dropdown-menu">
+                <button id="menu-contador-conectados" class="dropdown-item item-info" onclick="actionTriggerVerConectadosMenu()"><i class="fas fa-users"></i> Conectados: 0</button>
+                <button class="dropdown-item" onclick="actionTriggerEditarPerfilMenu()" style="color: var(--accent); font-weight: 600;"><i class="fas fa-user-edit"></i> Editar Mi Perfil</button>
+                <button class="dropdown-item" onclick="actionTriggerSubirAsientoAutoMenu()" style="color: var(--primary);"><i class="fas fa-chair"></i> Sentarme en VIP (Sillita)</button>
+                <button class="dropdown-item" onclick="actionTriggerCambiarFondsMenu()" style="color: #a55eea;"><i class="fas fa-cloud-upload-alt"></i> Cambiar Fondo (Mi Nube)</button>
+                <button class="dropdown-item" onclick="actionTriggerFondoHacker()"><i class="fas fa-laptop-code" style="color: #00ff41;"></i> Fondo Hacker (Matrix)</button>
+                <button class="dropdown-item" onclick="actionTriggerGaleria()"><i class="fas fa-images" style="color: #00ff88;"></i> Galería (Enviar Foto)</button>
+                <button class="dropdown-item" onclick="actionTriggerNotaVozMenu()"><i class="fas fa-music" style="color: #00d2ff;"></i> Efectos de Sonido (Audio)</button>
+                <button class="dropdown-item" onclick="actionTriggerMusicaSala()"><i class="fas fa-music" style="color: #00f2fe;"></i> Subir Música (Sala)</button>
+                <button class="dropdown-item" onclick="detenerMusicaSala()" style="color: #ff3860;"><i class="fas fa-stop-circle"></i> Detener Música de Sala</button>
+                <button class="dropdown-item item-warning" onclick="actionTriggerVaciarAsientosMenu()"><i class="fas fa-user-slash"></i> Vaciar Recinto Asientos</button>
+                <button class="dropdown-item" onclick="actionTriggerClearChatMenu()" style="color: #ff9f43;"><i class="fas fa-trash-alt"></i> Eliminar Historial Chat</button>
+                <button class="dropdown-item item-danger" onclick="salirManual()"><i class="fas fa-sign-out-alt"></i> Salir de la Sala</button>
+            </div>
+        </div>
+
+        <div class="video-section">
+            <div class="video-box" id="yt-player-container">
+            <div id="yt-player" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
+        </div>
+            <div style="display:flex; gap:5px; margin-top:8px;">
+                <input type="text" id="yt-url" placeholder="Pega link de YouTube, Facebook, TikTok, Drive..." style="flex:1; background:rgba(0,0,0,0.5); border:1px solid #444; color:white; padding:8px; border-radius:5px;">
+                <button onclick="updateVid()" style="background:var(--primary); border:none; padding:0 15px; border-radius:5px; font-weight:bold; color:#000; cursor:pointer;">OK</button>
+            </div>
+        </div>
+
+        <div class="seats-wrapper">
+            <div class="seat" id="s-1" onclick="abrirMenuAsiento('1')"><div class="seat-label-clean"><span>1</span></div></div>
+            <div class="seat" id="s-2" onclick="abrirMenuAsiento('2')"><div class="seat-label-clean"><span>2</span></div></div>
+            <div class="seat" id="s-3" onclick="abrirMenuAsiento('3')"><div class="seat-label-clean"><span>3</span></div></div>
+            <div class="seat" id="s-4" onclick="abrirMenuAsiento('4')"><div class="seat-label-clean"><span>4</span></div></div>
+        </div>
+
+        <div id="chat-area"></div>
+
+        <div class="footer-container">
+            <div id="typing-indicator"></div>
+            <div class="footer">
+                <button id="mic-btn" class="btn-footer-secondary" onmousedown="recStart()" onmouseup="recStop()" ontouchstart="recStart()" ontouchend="recStop()" title="Grabar nota de voz"><i class="fas fa-microphone"></i></button>
+                <button class="btn-footer-secondary" onclick="document.getElementById('chat-pic-in').click()" title="Enviar foto"><i class="fas fa-image"></i></button>
+                <input type="text" id="msg-in" placeholder="Escribe algo..." oninput="handleTyping()">
+                <button class="btn-send-round" onclick="send()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBU2lno4nRNlELUekGDW4FRNYKq85R7VC0",
+            authDomain: "chat167.firebaseapp.com",
+            databaseURL: "https://chat167-default-rtdb.firebaseio.com",
+            projectId: "chat167",
+            storageBucket: "chat167.firebasestorage.app",
+            messagingSenderId: "784790990792",
+            appId: "1:784790990792:web:6e27060e843894d8c3dafd"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const rtdb = firebase.database();
+
+        let myNick = localStorage.getItem('vip_nick') || "";
+        let myPic = localStorage.getItem('vip_pic') || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+        let myBio = localStorage.getItem('vip_bio') || "VIP User";
+        let myVipLevel = localStorage.getItem('vip_level') || "4"; 
+        let myMessagesCount = 0;
+        let currentSeat = null;
+        let typingTimeout, typingTimeoutPriv;
+
+        let userModalAbierto = { nick: "", pic: "", bio: "", vip: "4", mensajes: 0 };
+        let asientoSeleccionadoMenu = null; 
+        let tempEditPic = "";
+
+        let chatPrivadoCon = null; 
+        let currentPrivRoomId = null;
+
+        // ===== CONTADOR PERMANENTE DE MENSAJES PRIVADOS =====
+        let privContadorActual = 0;
+        let privContadorListener = null;
+
+        if(myPic) document.getElementById('prev').src = myPic;
+
+        // ===== PANTALLA DE CARGA INICIAL =====
+        (function pantallaCarga() {
+            const terminal = document.getElementById('virus-terminal');
+            const progress = document.getElementById('virus-progress');
+            const percent = document.getElementById('virus-percent');
+            const virusScreen = document.getElementById('virus-infection-screen');
+
+            const lines = [
+                "> Iniciando protocolo HACKERS_VIP...",
+                "> Accediendo a Firebase RTDB...",
+                "> Cargando módulos de seguridad...",
+                "> Verificando conexión...",
+                "> Preparando interfaz...",
+                "> Sistema listo.",
+                "> BIENVENIDO A HACKERS VIP ☠️"
+            ];
+
+            let lineIndex = 0;
+
+            function typeLine() {
+                if(lineIndex < lines.length) {
+                    const div = document.createElement('div');
+                    div.style.opacity = '0';
+                    div.style.transition = 'opacity 0.1s';
+                    div.innerText = lines[lineIndex];
+                    terminal.appendChild(div);
+                    setTimeout(() => div.style.opacity = '1', 10);
+                    terminal.scrollTop = terminal.scrollHeight;
+                    lineIndex++;
+                    const pct = Math.min(100, Math.floor((lineIndex / lines.length) * 100));
+                    progress.style.width = pct + '%';
+                    percent.innerText = pct + '%';
+                    setTimeout(typeLine, 180 + Math.random() * 200);
+                } else {
+                    setTimeout(() => {
+                        virusScreen.style.transition = 'opacity 0.5s';
+                        virusScreen.style.opacity = '0';
+                        setTimeout(() => {
+                            virusScreen.style.display = 'none';
+                            // Mostrar login para que el usuario complete sus datos
+                            mostrarLogin();
+                        }, 500);
+                    }, 400);
+                }
+            }
+            typeLine();
+        })();
+
+        // 🟢 LLUVIA DE CÓDIGO MATRIX DE FONDO (pantalla de acceso hacker)
+        let matrixIntervalo = null;
+        function iniciarMatrixFondo() {
+            const canvas = document.getElementById('matrix-canvas');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const caracteres = '01H4CK3RS$#%&<>/{}[]アイウエオカキクケコ';
+            const tamFuente = 14;
+            const columnas = Math.floor(canvas.width / tamFuente);
+            const gotas = Array(columnas).fill(1);
+            if(matrixIntervalo) clearInterval(matrixIntervalo);
+            matrixIntervalo = setInterval(() => {
+                ctx.fillStyle = 'rgba(1, 8, 1, 0.08)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#00ff41';
+                ctx.font = tamFuente + 'px monospace';
+                for(let i = 0; i < gotas.length; i++) {
+                    const texto = caracteres[Math.floor(Math.random() * caracteres.length)];
+                    ctx.fillText(texto, i * tamFuente, gotas[i] * tamFuente);
+                    if(gotas[i] * tamFuente > canvas.height && Math.random() > 0.975) gotas[i] = 0;
+                    gotas[i]++;
+                }
+            }, 50);
+        }
+
+        function mostrarLogin() {
+            // Cargar datos previos si existen
+            const savedNick = localStorage.getItem('vip_nick');
+            const savedPic = localStorage.getItem('vip_pic');
+            const savedBio = localStorage.getItem('vip_bio');
+
+            if(savedNick) document.getElementById('nick').value = savedNick;
+            if(savedBio) document.getElementById('bio').value = savedBio;
+            if(savedPic) {
+                document.getElementById('prev').src = savedPic;
+                myPic = savedPic;
+            }
+
+            document.getElementById('login-screen').style.display = 'flex';
+            iniciarMatrixFondo();
+        }
+
+
+
+        function getHora() { return new Date().toLocaleTimeString('es-MX', {timeZone: 'America/Mexico_City', hour: '2-digit', minute:'2-digit', hour12: true}); }
+        function generarBadgeHtml(nivel) { return ''; }
+
+        function lanzarAnuncioGlobalPush(texto) {
+            const panel = document.getElementById('global-app-announcement');
+            document.getElementById('announcement-text-content').innerText = texto;
+            panel.classList.add('show');
+            setTimeout(() => { panel.classList.remove('show'); }, 5000);
+        }
+
+        function abrirFotoCompleta(src) {
+            document.getElementById('foto-completa-src').src = src;
+            document.getElementById('modal-visor-foto').style.display = 'flex';
+        }
+
+        function preview(i) { 
+            if(i.files && i.files[0]) { 
+                let f = new FileReader(); 
+                f.onload = e => { 
+                    document.getElementById('prev').src = e.target.result; 
+                    myPic = e.target.result; 
+                }; 
+                f.readAsDataURL(i.files[0]); 
+            } 
+        }
+        function previewEdit(i) { 
+            if(i.files && i.files[0]) { 
+                let f = new FileReader(); 
+                f.onload = e => { 
+                    document.getElementById('edit-p-prev').src = e.target.result; 
+                    tempEditPic = e.target.result; 
+                }; 
+                f.readAsDataURL(i.files[0]); 
+            } 
+        }
+        function toggleMenuTop() { const menu = document.getElementById('dropdownMenuTop'); menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex'; }
+
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('dropdownMenuTop');
+            const btn = document.querySelector('.fa-ellipsis-v')?.parentNode;
+            if (menu && menu.style.display === 'flex' && !menu.contains(event.target) && !btn?.contains(event.target)) { menu.style.display = 'none'; }
+        });
+
+        function trackearYVerificarMensaje() {
+            myMessagesCount += 5;
+            rtdb.ref(`sala/presencia/${myNick}/mensajes`).set(myMessagesCount);
+            // Verificar si alcanzó 1000 mensajes para desbloquear VIP 17
+            verificarDesbloqueoNivel17();
+        }
+
+        function verificarDesbloqueoNivel17() {
+            if (myMessagesCount >= 1000 && myVipLevel !== "17") {
+                myVipLevel = "17";
+                localStorage.setItem('vip_level', "17");
+                rtdb.ref('sala/presencia/' + myNick).update({ vip: "17" });
+                if(currentSeat) rtdb.ref('sala/asientos/' + currentSeat).update({ vip: "17" });
+                rtdb.ref('sala/chat').push({ type: 'system', msg: `🔥🔥🔥 ¡${myNick} HA ALCANZADO EL RANGO MÁXIMO! VIP 17 - DIOS ABSOLUTO DESBLOQUEADO 🔥🔥🔥`, time: getHora() });
+                lanzarAnuncioGlobalPush(`🌟 ¡${myNick} ha alcanzado el nivel supremo VIP 17! 🌟`);
+            }
+        }
+
+        function actionTriggerGaleria() { document.getElementById('dropdownMenuTop').style.display = 'none'; document.getElementById('chat-pic-in').click(); }
+        function actionTriggerNotaVozMenu() { document.getElementById('dropdownMenuTop').style.display = 'none'; document.getElementById('voice-note-in').click(); }
+
+        // 🖥️ FONDO HACKER MATRIX - se genera y se aplica para TODA la sala
+        function actionTriggerFondoHacker() {
+            document.getElementById('dropdownMenuTop').style.display = 'none';
+            const canvas = document.createElement('canvas');
+            canvas.width = 720; canvas.height = 1280;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#010801';
+            ctx.fillRect(0, 0, 720, 1280);
+            const caracteres = '01H4CK3RS$#%<>/{}';
+            const tam = 16;
+            const columnas = Math.floor(720 / tam);
+            const gotas = Array(columnas).fill(0).map(() => Math.floor(Math.random() * 40));
+            ctx.font = tam + 'px monospace';
+            for(let f = 0; f < 50; f++) {
+                ctx.fillStyle = 'rgba(1, 8, 1, 0.12)';
+                ctx.fillRect(0, 0, 720, 1280);
+                for(let i = 0; i < columnas; i++) {
+                    const t = caracteres[Math.floor(Math.random() * caracteres.length)];
+                    ctx.fillStyle = Math.random() > 0.92 ? '#aaffcc' : '#00c236';
+                    ctx.fillText(t, i * tam, gotas[i] * tam);
+                    if(gotas[i] * tam > 1280 && Math.random() > 0.975) gotas[i] = 0;
+                    gotas[i]++;
+                }
+            }
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+            rtdb.ref('sala/tema/bg').set(dataUrl);
+            rtdb.ref('sala/chat').push({ type: 'system', msg: `🖥️ ${myNick} activó el fondo HACKER MATRIX`, time: getHora() });
+        }
+        function actionTriggerMusicaSala() { document.getElementById('dropdownMenuTop').style.display = 'none'; document.getElementById('sala-music-in').click(); }
+        function actionTriggerVerConectadosMenu() { document.getElementById('dropdownMenuTop').style.display = 'none'; verConectados(); }
+        function actionTriggerVaciarAsientosMenu() { document.getElementById('dropdownMenuTop').style.display = 'none'; vaciarAsientos(); }
+        function actionTriggerClearChatMenu() { document.getElementById('dropdownMenuTop').style.display = 'none'; clearChatGlobal(); }
+        function actionTriggerSubirAsientoAutoMenu() { document.getElementById('dropdownMenuTop').style.display = 'none'; subirAsientoAuto(); }
+        function actionTriggerCambiarFondsMenu() { document.getElementById('dropdownMenuTop').style.display = 'none'; document.getElementById('bg-in').click(); }
+
+        function actionTriggerEditarPerfilMenu() {
+            document.getElementById('dropdownMenuTop').style.display = 'none';
+            document.getElementById('edit-p-prev').src = myPic || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+            document.getElementById('edit-p-nick').value = myNick || "";
+            document.getElementById('edit-p-bio').value = myBio || "VIP User";
+            tempEditPic = myPic || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+            document.getElementById('modal-editar-perfil').style.display = 'flex';
+        }
+
+        function guardarMiPerfilEditado() {
+            const nuevoNick = document.getElementById('edit-p-nick').value.trim();
+            const nuevaBio = document.getElementById('edit-p-bio').value.trim() || "VIP User";
+            if(!nuevoNick) { alert("El nombre no puede quedar vacío."); return; }
+
+            const viejoNick = myNick;
+            const viejaPic = myPic;
+            const viejaBio = myBio;
+            const huboCambioNick = (viejoNick !== nuevoNick);
+
+            // Actualizar variables globales y localStorage PRIMERO
+            myNick = nuevoNick;
+            myPic = tempEditPic || viejaPic;
+            myBio = nuevaBio;
+            localStorage.setItem('vip_nick', myNick);
+            localStorage.setItem('vip_pic', myPic);
+            localStorage.setItem('vip_bio', myBio);
+
+            // Preparar datos de presencia
+            const datosPresencia = {
+                status: 'online',
+                time: getHora(),
+                pic: myPic,
+                bio: myBio,
+                vip: myVipLevel,
+                mensajes: myMessagesCount
+            };
+
+            if(huboCambioNick) {
+                // === CAMBIO DE NICK: transición atómica ===
+                // 1. Crear PRIMERO el nuevo nodo de presencia (para no desaparecer nunca)
+                const nuevoPresRef = rtdb.ref('sala/presencia/' + myNick);
+                const nuevoTypingRef = rtdb.ref('sala/typing/' + myNick);
+                const nuevoTypingPrivRef = rtdb.ref('sala/typing_privado/' + myNick);
+
+                // Re-configurar onDisconnect para el NUEVO nick
+                rtdb.ref('.info/connected').once('value', snap => {
+                    if(snap.val() === true) {
+                        nuevoPresRef.onDisconnect().remove();
+                        nuevoTypingRef.onDisconnect().remove();
+                        nuevoTypingPrivRef.onDisconnect().remove();
+                    }
+                });
+
+                nuevoPresRef.set(datosPresencia).then(() => {
+                    // 2. Ahora sí eliminar el viejo nodo (el usuario NUNCA desapareció)
+                    rtdb.ref('sala/presencia/' + viejoNick).remove();
+                    rtdb.ref('sala/typing/' + viejoNick).remove();
+                    rtdb.ref('sala/typing_privado/' + viejoNick).remove();
+
+                    // 3. Actualizar asientos donde estuviera sentado con el nick viejo
+                    rtdb.ref('sala/asientos').once('value', s => {
+                        const asientos = s.val() || {};
+                        ['1', '2', '3', '4'].forEach(id => {
+                            if(asientos[id] && asientos[id].u === viejoNick) {
+                                rtdb.ref('sala/asientos/' + id).set({ 
+                                    u: myNick, 
+                                    p: myPic, 
+                                    b: myBio, 
+                                    vip: myVipLevel 
+                                });
+                                currentSeat = id;
+                            }
+                        });
+                    });
+
+                    // 4. Notificar en chat global
+                    rtdb.ref('sala/chat').push({ 
+                        type: 'system', 
+                        msg: `⚙️ ${viejoNick} cambió su nombre a: "${myNick}"`, 
+                        time: getHora() 
+                    });
+                }).catch(err => {
+                    console.error("Error al cambiar nick:", err);
+                    alert("Hubo un error al guardar. Intenta de nuevo.");
+                });
+            } else {
+                // === SIN CAMBIO DE NICK: update suave ===
+                // Usamos update() para no tocar onDisconnect ni perder datos
+                rtdb.ref('sala/presencia/' + myNick).update(datosPresencia);
+
+                // Actualizar asiento si está sentado
+                if(currentSeat) {
+                    rtdb.ref('sala/asientos/' + currentSeat).update({
+                        u: myNick,
+                        p: myPic,
+                        b: myBio,
+                        vip: myVipLevel
+                    });
+                }
+
+                // Notificar solo si realmente cambió algo
+                const cambioReal = (myPic !== viejaPic) || (myBio !== viejaBio);
+                if(cambioReal) {
+                    rtdb.ref('sala/chat').push({ 
+                        type: 'system', 
+                        msg: `⚙️ ${myNick} actualizó su perfil`, 
+                        time: getHora() 
+                    });
+                }
+            }
+
+            document.getElementById('modal-editar-perfil').style.display = 'none';
+        }
+
+        function verPerfilUsuario(nick, pic, bio, vipLvl, msgCount) {
+            const lvl = vipLvl || "4";
+            const mCount = msgCount || 0;
+            userModalAbierto = { nick: nick, pic: pic, bio: bio || "Sin biografía.", vip: lvl, mensajes: mCount };
+
+            document.getElementById('p-img').src = pic;
+            document.getElementById('p-name').innerHTML = `${nick} ${generarBadgeHtml(lvl)}`;
+            document.getElementById('p-bio').innerText = bio || "Este miembro mantiene su perfil con misterio.";
+            document.getElementById('p-rank-tag').innerHTML = ``;
+            document.getElementById('p-rank-tag').style.display = 'none';
+
+            // Ocultar barra de progreso del perfil
+            document.getElementById('p-progreso-cp').style.display = 'none';
+
+            // SIEMPRE mostrar "Buscando pareja" por defecto - CP solo se activa a los 1000 mensajes
+            document.getElementById('p-mensajes').innerHTML = 
+                `<div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                    <span style="color:#ff007f; font-size:10px; font-family:'Orbitron'; letter-spacing:1px;"><i class="fas fa-heart"></i> Buscando pareja</span>
+                    <span style="font-size:9px; color:#888;">Envía 1,000 mensajes en chat privado para desbloquear CP</span>
+                </div>`;
+
+            // Solo buscar pareja si ya tiene CP confirmada (nivel > 0)
+            buscarParejaCPConNivel(nick, function(parejaNick, nivelCP) {
+                if (parejaNick && nivelCP > 0) {
+                    const colorCiclo = ((nivelCP - 1) % 4) + 1;
+                    const cpClass = `badge-cp-nivel-${colorCiclo}`;
+                    document.getElementById('p-mensajes').innerHTML = 
+                        `<div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+                            <span style="color:#ffd700; font-size:10px; font-family:'Orbitron'; letter-spacing:1px;">💍 PAREJA CP <span class="badge-cp-pareja ${cpClass}">NIVEL ${nivelCP}</span></span>
+                            <span style="font-size:11px; color:#fff;">${nick} <span style="color:#ff007f;">❤️</span> ${parejaNick}</span>
+                        </div>`;
+                }
+            });
+
+            if(nick === myNick) {
+                document.getElementById('btn-privado-este-usuario').style.display = 'none';
+                document.getElementById('btn-expulsar-este-usuario').style.display = 'none';
+            } else {
+                document.getElementById('btn-privado-este-usuario').style.display = 'flex';
+                document.getElementById('btn-expulsar-este-usuario').style.display = 'flex';
+            }
+
+            const cardElement = document.getElementById('prestige-card-element');
+            cardElement.className = "prestige-card"; 
+
+            document.getElementById('modal-perfil').style.display = 'flex';
+        }
+
+        // Buscar pareja CP de un usuario en todas las salas privadas (con nivel REAL)
+        function buscarParejaCPConNivel(nickUsuario, callback) {
+            rtdb.ref('sala/chats_privados').once('value', snapshot => {
+                const salas = snapshot.val() || {};
+                let parejaEncontrada = null;
+                let nivelCP = 1;
+
+                Object.keys(salas).forEach(roomId => {
+                    const parejaOficial = salas[roomId].pareja_oficial;
+                    if (parejaOficial) {
+                        if (parejaOficial.pareja1 === nickUsuario) {
+                            parejaEncontrada = parejaOficial.pareja2;
+                            nivelCP = parejaOficial.nivel || 1;
+                        } else if (parejaOficial.pareja2 === nickUsuario) {
+                            parejaEncontrada = parejaOficial.pareja1;
+                            nivelCP = parejaOficial.nivel || 1;
+                        }
+                    }
+                });
+
+                callback(parejaEncontrada, nivelCP);
+            });
+        }
+
+        // Función antigua mantenida para compatibilidad
+        function buscarParejaCP(nickUsuario, callback) {
+            buscarParejaCPConNivel(nickUsuario, callback);
+        }
+
+        function abrirMenuAsiento(id) {
+            asientoSeleccionadoMenu = id;
+            document.getElementById('asiento-menu-titulo').innerText = `ASIENTO VIP ${id}`;
+            document.getElementById('menu-asiento-acciones').style.display = 'flex';
+        }
+
+        document.getElementById('menu-asiento-acciones').addEventListener('click', function(event) { if(event.target === this) cerrarMenuAsiento(); });
+        function cerrarMenuAsiento() { document.getElementById('menu-asiento-acciones').style.display = 'none'; asientoSeleccionadoMenu = null; }
+        function menuAccionSubir() { if(asientoSeleccionadoMenu) { handleSeatDirecto(asientoSeleccionadoMenu); } cerrarMenuAsiento(); }
+        function menuAccionBajar() { if(asientoSeleccionadoMenu) { rtdb.ref('sala/asientos/' + asientoSeleccionadoMenu).remove(); } cerrarMenuAsiento(); }
+
+        function access() {
+            const n = document.getElementById('nick').value.trim();
+            const b = document.getElementById('bio').value.trim();
+
+            if(!n) { 
+                alert("Por favor ingresa un nombre de usuario."); 
+                return; 
+            }
+
+            if(!myPic || myPic === "https://cdn-icons-png.flaticon.com/512/149/149071.png") {
+                if(!confirm("No has seleccionado una foto de perfil. ¿Quieres continuar con la foto por defecto?")) {
+                    return;
+                }
+            }
+
+            myNick = n;
+            myBio = b || "VIP User";
+            localStorage.setItem('vip_nick', myNick);
+            localStorage.setItem('vip_pic', myPic);
+            localStorage.setItem('vip_bio', myBio);
+            if(!myVipLevel) {
+                myVipLevel = "4";
+                localStorage.setItem('vip_level', myVipLevel);
+            }
+
+            document.getElementById('login-screen').style.display = 'none';
+            if(matrixIntervalo) clearInterval(matrixIntervalo);
+            document.getElementById('main-app').style.display = 'flex';
+
+            const time = getHora();
+
+            rtdb.ref(`sala/presencia/${myNick}/mensajes`).once('value', snapshot => {
+                if (snapshot.exists()) {
+                    myMessagesCount = snapshot.val();
+                } else {
+                    myMessagesCount = 0;
+                }
+
+                rtdb.ref('sala/chat').push({ 
+                    type: 'banner_entrada', 
+                    msg: `⚡ ¡BIENVENIDO PRESTIGIOSO! El usuario ${myNick} ha ingresado con rango VIP ⚡`, 
+                    time: time 
+                });
+
+                const presRef = rtdb.ref('sala/presencia/' + myNick);
+                const typingRef = rtdb.ref('sala/typing/' + myNick);
+                const typingPrivRef = rtdb.ref('sala/typing_privado/' + myNick);
+
+                rtdb.ref('.info/connected').on('value', snap => {
+                    if (snap.val() === true) {
+                        presRef.onDisconnect().remove();
+                        typingRef.onDisconnect().remove();
+                        typingPrivRef.onDisconnect().remove();
+                        presRef.set({ status: 'online', time: time, pic: myPic, bio: myBio, vip: myVipLevel, mensajes: myMessagesCount });
+                    }
+                });
+                startSync();
+                escucharInvitacionesPrivadas();
+            });
+        }
+
+        function salirManual() {
+            document.getElementById('dropdownMenuTop').style.display = 'none';
+            rtdb.ref('sala/typing/' + myNick).remove();
+            rtdb.ref('sala/typing_privado/' + myNick).remove();
+            rtdb.ref('sala/chat').push({ type: 'system', msg: `🔻 ${myNick} salió de la sala`, time: getHora() }).then(() => {
+                rtdb.ref('sala/presencia/' + myNick).remove().then(() => {
+                    if(currentSeat) rtdb.ref('sala/asientos/' + currentSeat).remove();
+                    location.reload();
+                });
+            });
+        }
+
+        function renderMensajeIndividual(d, esPrivado = false, key = "") {
+            if(d.type === 'system') { 
+                return `<div class="sys-msg">${d.msg} <small>${d.time}</small></div>`; 
+            }
+            if(d.type === 'banner_entrada') { 
+                return `<div class="banner-entrada-vip">${d.msg}</div>`; 
+            }
+
+            // MODO CHAT PRIVADO PROLIJO (TIPO WHATSAPP/TELEGRAM PREMIUM)
+            if(esPrivado) {
+                const esMio = (d.user === myNick);
+                return `
+                <div class="priv-msg-row ${esMio ? 'my-msg' : 'their-msg'}">
+                    <div class="priv-msg-bubble">
+                        <div style="font-size: 9px; font-weight: bold; margin-bottom: 2px; color: var(--gold);" class="nombre-cristal">${d.user}</div>
+                        ${d.type === 'photo' ? `<img src="${d.msg}" class="chat-img" onclick="abrirFotoCompleta(this.src)">` : d.type === 'audio' ? `<audio controls src="${d.msg}" style="width:160px; height:32px;"></audio><a href="${d.msg}" download="nota_voz_hackers.mp3" title="Descargar nota de voz" style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; margin-left:6px; background:rgba(0,255,136,0.15); border:1px solid rgba(0,255,136,0.4); border-radius:50%; color:#00ff88; font-size:11px; text-decoration:none; vertical-align:middle;">⬇</a>` : `<span>${d.msg}</span>`}
+                        <span class="priv-time-stamp">${d.time}</span>
+                    </div>
+                </div>`;
+            }
+
+            // MODO CHAT GLOBAL (MANTIENE AVATARES VERTICALES ORIGINALES)
+            const safeBio = (d.bio || "VIP User").replace(/'/g, "\'");
+            const safePic = d.pic || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+            const msgVip = d.vip || "4";
+            const userMsgs = d.user_msgs || 0;
+            const esMio = (d.user === myNick);
+            const msgKey = key || '';
+
+            return `
+            <div style="display:flex; gap:6px; margin-bottom:4px; align-items: flex-end;" data-msg-key="${msgKey}">
+                <div class="chat-user-block">
+                    <div class="vip-avatar-container" data-vip="${msgVip}" style="padding: 2px; width:34px; height:34px;">
+                        <img src="${safePic}" class="chat-avatar-click avatar-vip-beat" data-vlvl="${msgVip}" onclick="verPerfilUsuario('${d.user}', '${safePic}', '${safeBio}', '${msgVip}', ${userMsgs})">
+                    </div>
+                    <span class="nombre-cristal nombre-debajo-avatar">${d.user}</span>
+                </div>
+                <div class="msg-content msg-vip-${msgVip}">
+                    ${esMio ? `<button class="msg-delete-btn" onclick="borrarMensajeGlobal('${msgKey}')" title="Eliminar mi mensaje">×</button>` : ''}
+                    <div style="display:flex; align-items:center; margin-bottom:2px;">
+                        ${generarBadgeHtml(msgVip)}
+                    </div>
+                    ${d.type === 'photo' ? `<img src="${d.msg}" class="chat-img" onclick="abrirFotoCompleta(this.src)">` : d.type === 'audio' ? `<audio controls src="${d.msg}" style="width:150px; height:32px;"></audio><a href="${d.msg}" download="nota_voz_hackers.mp3" title="Descargar nota de voz" style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; margin-left:6px; background:rgba(0,255,136,0.15); border:1px solid rgba(0,255,136,0.4); border-radius:50%; color:#00ff88; font-size:11px; text-decoration:none; vertical-align:middle;">⬇</a>` : `<span style="color:#fff;">${d.msg}</span>`}
+                    <span style="font-size:7.5px; display:block; text-align:right; margin-top:2px; opacity:0.5;">${d.time}</span>
+                </div>
+            </div>`;
+        }
+
+        function startSync() {
+            rtdb.ref('sala/tema/bg').on('value', s => { if(s.exists()) document.body.style.backgroundImage = `url(${s.val()})`; });
+
+            rtdb.ref('sala/anuncio_global').on('value', s => { if(s.exists()) { lanzarAnuncioGlobalPush(s.val().txt); } });
+
+            rtdb.ref('sala/presencia').on('value', s => {
+                const conData = s.val() || {};
+                const totalConOCenctados = Object.keys(conData).length;
+                document.getElementById('global-user-badge').innerText = totalConOCenctados;
+
+                const btnContadorMenu = document.getElementById('menu-contador-conectados');
+                if(btnContadorMenu) { btnContadorMenu.innerHTML = `<i class="fas fa-users"></i> Conectados: ${totalConOCenctados}`; }
+
+                if (conData[myNick] && conData[myNick].mensajes !== undefined) {
+                    myMessagesCount = conData[myNick].mensajes;
+                }
+
+                const avatarContainer = document.getElementById('header-avatars-container');
+                avatarContainer.innerHTML = "";
+
+                Object.keys(conData).forEach(u => {
+                    const uPic = conData[u].pic || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                    const uBio = (conData[u].bio || "VIP User").replace(/'/g, "\'");
+                    const uVip = conData[u].vip || "4";
+                    const uMsgs = conData[u].mensajes || 0;
+
+                    avatarContainer.insertAdjacentHTML('beforeend', `
+                        <div class="header-avatar-container-clean" data-vip="${uVip}" style="width:30px; height:30px;">
+                            <button class="user-online-btn-header" onclick="verPerfilUsuario('${u}', '${uPic}', '${uBio}', '${uVip}', ${uMsgs})">
+                                <img src="${uPic}" class="avatar-vip-beat" data-vlvl="${uVip}">
+                            </button>
+                        </div>
+                    `);
+                });
+            });
+
+            rtdb.ref('sala/typing').on('value', s => {
+                const typingUsers = s.val() || {};
+                const usersList = Object.keys(typingUsers).filter(u => u !== myNick);
+                const indicator = document.getElementById('typing-indicator');
+                if (usersList.length > 0) {
+                    if (usersList.length === 1) {
+                        indicator.innerText = typingUsers[usersList[0]] === 'recording' ? `🎙️ ${usersList[0]} te está grabando un audio...` : `✍️ ${usersList[0]} te está escribiendo...`;
+                    } else { indicator.innerText = "👥 Varias personas te están escribiendo..."; }
+                } else { indicator.innerText = ""; }
+            });
+
+            rtdb.ref('sala/video').on('value', s => { 
+                if(s.exists()) {
+                    const videoId = s.val();
+                    if (videoId && typeof videoId === 'string' && videoId.trim().length >= 5) {
+                        loadYouTubeVideo(videoId.trim());
+                    }
+                } 
+            });
+
+            // 🎬 Videos de cualquier red social (Facebook, TikTok, Drive, etc.)
+            rtdb.ref('sala/video_src').on('value', s => {
+                if(s.exists() && s.val()) { mostrarVideoGenerico(s.val()); }
+            });
+
+            rtdb.ref('sala/musica_global').on('value', s => {
+                if(s.exists()){
+                    const audioPlayer = document.getElementById('global-room-player');
+                    if(audioPlayer.src !== s.val().archivo){ audioPlayer.src = s.val().archivo; audioPlayer.play().catch(e=>console.log(e)); }
+                }
+            });
+
+            rtdb.ref('sala/asientos').on('value', s => {
+                const data = s.val() || {};
+
+                ['1', '2', '3', '4'].forEach(id => {
+                    const el = document.getElementById('s-' + id);
+                    if(data[id]) {
+                        const seatVip = data[id].vip || "4";
+                        el.innerHTML = `
+                            <div class="vip-avatar-container" data-vip="${seatVip}" style="width:100%; height:100%; padding:0;">
+                                <img src="${data[id].p}" class="avatar-vip-beat" data-vlvl="${seatVip}" style="width:100%; height:100%;">
+                            </div>
+                            <div class="seat-label-clean">
+                                <span class="nombre-cristal">${data[id].u}</span>
+                                ${generarBadgeHtml(seatVip)}
+                            </div>`;
+                        el.classList.add('active');
+                        if(data[id].u === myNick) { currentSeat = id; }
+                    } else { 
+                        el.innerHTML = `<div class="seat-label-clean"><span>${id}</span></div>`; 
+                        el.classList.remove('active'); 
+                        if(currentSeat === id) currentSeat = null;
+                    }
+                });
+            });
+
+            const chatArea = document.getElementById('chat-area');
+            chatArea.innerHTML = "";
+
+            const chatRef = rtdb.ref('sala/chat');
+            chatRef.off();
+
+            chatRef.once('value', snapshot => {
+                let initialHTML = "";
+                snapshot.forEach(child => {
+                    initialHTML += renderMensajeIndividual(child.val(), false, child.key);
+                });
+                chatArea.innerHTML = initialHTML;
+                chatArea.scrollTop = chatArea.scrollHeight;
+
+                chatRef.on('child_added', newChild => {
+                    rtdb.ref('sala/chat/' + newChild.key).once('value', checkSnap => {
+                        const uniqueCheckStr = newChild.val().time + (newChild.val().user || '');
+                        if(!chatArea.innerHTML.includes(uniqueCheckStr)){
+                            chatArea.insertAdjacentHTML('beforeend', renderMensajeIndividual(newChild.val(), false, newChild.key));
+                            requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; });
+                        }
+                    });
+                });
+            });
+        }
+
+        function handleTyping() {
+            const inputVal = document.getElementById('msg-in').value.trim();
+            if(inputVal.length > 0) {
+                rtdb.ref('sala/typing/' + myNick).set('typing');
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(() => { rtdb.ref('sala/typing/' + myNick).remove(); }, 1500);
+            } else { rtdb.ref('sala/typing/' + myNick).remove(); }
+        }
+
+
+        // ===== FUNCION PARA BORRAR MENSAJES DEL CHAT GLOBAL =====
+        function borrarMensajeGlobal(msgKey) {
+            if(!msgKey) return;
+
+            rtdb.ref('sala/chat/' + msgKey).once('value', snap => {
+                if(snap.exists()) {
+                    const datos = snap.val();
+                    // Solo permitir borrar si es tu propio mensaje
+                    if(datos.user === myNick) {
+                        if(confirm('¿Eliminar este mensaje del chat global?')) {
+                            rtdb.ref('sala/chat/' + msgKey).remove();
+                            // También eliminar del DOM inmediatamente para feedback visual
+                            const msgElement = document.querySelector(`[data-msg-key="${msgKey}"]`);
+                            if(msgElement) {
+                                msgElement.style.transition = 'all 0.3s ease';
+                                msgElement.style.opacity = '0';
+                                msgElement.style.transform = 'scale(0.9)';
+                                setTimeout(() => msgElement.remove(), 300);
+                            }
+                        }
+                    } else {
+                        alert('Solo puedes eliminar tus propios mensajes.');
+                    }
+                }
+            });
+        }
+
+        function send() { 
+            const input = document.getElementById('msg-in');
+            if(input.value.trim()) { 
+                rtdb.ref('sala/typing/' + myNick).remove();
+                trackearYVerificarMensaje();
+                rtdb.ref('sala/chat').push({ user: myNick, pic: myPic, bio: myBio, vip: myVipLevel, user_msgs: myMessagesCount, msg: input.value, type: 'text', time: getHora() }); 
+                input.value = ""; 
+            } 
+        }
+
+        function subirNotaVoz(i) {
+            if(i.files && i.files[0]) {
+                let f = new FileReader();
+                f.onload = e => {
+                    trackearYVerificarMensaje();
+                    // Se envía EXACTAMENTE igual que una nota grabada en vivo: nadie nota la diferencia
+                    rtdb.ref('sala/chat').push({ user: myNick, pic: myPic, bio: myBio, vip: myVipLevel, user_msgs: myMessagesCount, msg: e.target.result, type: 'audio', time: getHora() });
+                };
+                f.readAsDataURL(i.files[0]);
+                i.value = "";
+            }
+        }
+
+        function vaciarAsientos() { rtdb.ref('sala/asientos').remove(); currentSeat = null; }
+        function subirAsientoAuto() { ejecutarAsignacionAsiento(myNick, myPic, myBio, myVipLevel, true); }
+
+        function subirUsuarioSeleccionado() {
+            if(!userModalAbierto.nick) return;
+            const esPropio = (userModalAbierto.nick === myNick);
+            ejecutarAsignacionAsiento(userModalAbierto.nick, userModalAbierto.pic, userModalAbierto.bio, userModalAbierto.vip, esPropio);
+            document.getElementById('modal-perfil').style.display = 'none';
+        }
+
+        function bajarUsuarioSeleccionado() {
+            if(!userModalAbierto.nick) return;
+            rtdb.ref('sala/asientos').once('value', s => {
+                const asientos = s.val() || {};
+                ['1', '2', '3', '4'].forEach(id => { if (asientos[id] && asientos[id].u === userModalAbierto.nick) rtdb.ref('sala/asientos/' + id).remove(); });
+                if(userModalAbierto.nick === myNick) currentSeat = null;
+                document.getElementById('modal-perfil').style.display = 'none';
+            });
+        }
+
+        // ===== EXPULSAR USUARIO DE LA SALA =====
+        function expulsarUsuarioSeleccionado() {
+            if(!userModalAbierto.nick) return;
+            if(userModalAbierto.nick === myNick) {
+                alert("No puedes expulsarte a ti mismo.");
+                return;
+            }
+
+            const nickExpulsar = userModalAbierto.nick;
+            if(!confirm(`¿Seguro que quieres expulsar a ${nickExpulsar} de la sala?`)) return;
+
+            // Remover presencia
+            rtdb.ref('sala/presencia/' + nickExpulsar).remove();
+            // Remover typing
+            rtdb.ref('sala/typing/' + nickExpulsar).remove();
+            rtdb.ref('sala/typing_privado/' + nickExpulsar).remove();
+            // Remover de asientos
+            rtdb.ref('sala/asientos').once('value', s => {
+                const asientos = s.val() || {};
+                ['1', '2', '3', '4'].forEach(id => { 
+                    if (asientos[id] && asientos[id].u === nickExpulsar) {
+                        rtdb.ref('sala/asientos/' + id).remove();
+                    }
+                });
+            });
+
+            // Notificar en chat global
+            rtdb.ref('sala/chat').push({ 
+                type: 'system', 
+                msg: `🚫 ${nickExpulsar} fue expulsado de la sala por ${myNick}`, 
+                time: getHora() 
+            });
+
+            lanzarAnuncioGlobalPush(`🚫 ${nickExpulsar} fue expulsado de la sala`);
+            document.getElementById('modal-perfil').style.display = 'none';
+        }
+
+        function ejecutarAsignacionAsiento(username, userpic, userbio, uservip, esPropio) {
+            rtdb.ref('sala/asientos').once('value', s => {
+                const asientosOcupados = s.val() || {};
+                const listadoAsientos = ['1', '2', '3', '4'];
+                for (let id of listadoAsientos) { if (asientosOcupados[id] && asientosOcupados[id].u === username) { rtdb.ref('sala/asientos/' + id).remove(); delete asientosOcupados[id]; } }
+
+                let asientoLibre = null;
+                for (let id of listadoAsientos) { if (!asientosOcupados[id]) { asientoLibre = id; break; } }
+
+                if (asientoLibre) {
+                    const seatRef = rtdb.ref('sala/asientos/' + asientoLibre);
+                    seatRef.set({ u: username, p: userpic, b: userbio, vip: uservip });
+                    if(esPropio) { currentSeat = asientoLibre; }
+                } else { alert("Todos los asientos VIP están llenos."); }
+            });
+        }
+
+        function verConectados() {
+            const list = document.getElementById('lista-online');
+            const cont = document.getElementById('usuarios-lista');
+            if(list.style.display === 'block') { list.style.display = 'none'; return; }
+            rtdb.ref('sala/presencia').once('value', s => {
+                cont.innerHTML = "";
+                if(s.exists()){
+                    const data = s.val();
+                    Object.keys(data).forEach(u => {
+                        const userPic = data[u].pic || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                        const userBio = data[u].bio || "VIP User";
+                        const userVip = data[u].vip || "4";
+                        const userMsgs = data[u].mensajes || 0;
+                        cont.insertAdjacentHTML('beforeend', `
+                            <div class="user-online-item" onclick="verPerfilUsuario('${u}', '${userPic}', '${userBio.replace(/'/g, "\'")}', '${userVip}', ${userMsgs})">
+                                <div class="vip-avatar-container" data-vip="${userVip}" style="width:32px; height:32px;"><img src="${userPic}" class="user-online-avatar avatar-vip-beat" data-vlvl="${userVip}"></div>
+                                <span class="nombre-cristal" style="font-size:12px; margin-left: 5px;">${u}</span>
+                                ${generarBadgeHtml(userVip)}
+                                <div class="user-dot"></div>
+                            </div>
+                        `);
+                    });
+                    list.style.display = 'block';
+                }
+            });
+        }
+
+        // 🔊 VARIABLES GLOBALES PARA YOUTUBE API
+        let ytPlayer = null;
+        let currentVideoId = null;
+        let isUserInteracted = false;
+
+        // 🔊 DETECTAR PRIMERA INTERACCIÓN DEL USUARIO (toque/clic en la página)
+        function marcarInteraccionUsuario() {
+            if (!isUserInteracted) {
+                isUserInteracted = true;
+                console.log('✅ Usuario interactuó - sonido permitido');
+                // Si hay un video cargado y está muteado, desmutearlo
+                if (ytPlayer && ytPlayer.unMute && currentVideoId) {
+                    try {
+                        ytPlayer.unMute();
+                        ytPlayer.setVolume(100);
+                    } catch(e) { console.log('Error al desmutear:', e); }
+                }
+            }
+        }
+        document.addEventListener('click', marcarInteraccionUsuario, { once: true });
+        document.addEventListener('touchstart', marcarInteraccionUsuario, { once: true });
+
+        // 🔊 CALLBACK REQUERIDO POR LA API DE YOUTUBE
+        function onYouTubeIframeAPIReady() {
+            console.log('✅ YouTube API lista');
+        }
+
+        // 🔊 CREAR/ACTUALIZAR EL REPRODUCTOR DE YOUTUBE CON SONIDO
+        function loadYouTubeVideo(videoId) {
+            // Validar que el videoId sea válido
+            if (!videoId || typeof videoId !== 'string' || videoId.trim() === '' || videoId.length < 5) {
+                console.log('⚠️ Video ID inválido ignorado:', videoId);
+                return;
+            }
+            currentVideoId = videoId.trim();
+
+            // Restaurar el contenedor del player si había un iframe genérico
+            const cont = document.getElementById('yt-player-container');
+            if (!document.getElementById('yt-player')) {
+                cont.innerHTML = '<div id="yt-player" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>';
+            }
+
+            if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+                ytPlayer.loadVideoById(currentVideoId);
+                setTimeout(() => {
+                    if (isUserInteracted && ytPlayer && typeof ytPlayer.unMute === 'function') {
+                        try {
+                            ytPlayer.unMute();
+                            ytPlayer.setVolume(100);
+                        } catch(e) {}
+                    }
+                }, 1500);
+            } else {
+                ytPlayer = new YT.Player('yt-player', {
+                    videoId: currentVideoId,
+                    playerVars: {
+                        autoplay: 1,
+                        mute: 0,
+                        rel: 0,
+                        modestbranding: 1,
+                        playsinline: 1,
+                        controls: 1,
+                        showinfo: 0
+                    },
+                    events: {
+                        onReady: function(event) {
+                            event.target.playVideo();
+                            if (isUserInteracted) {
+                                try { event.target.unMute(); event.target.setVolume(100); } catch(e) {}
+                            }
+                        },
+                        onStateChange: function(event) {
+                            if (event.data === YT.PlayerState.PLAYING && isUserInteracted) {
+                                try { event.target.unMute(); event.target.setVolume(100); } catch(e) {}
+                            }
+                        },
+                        onError: function(event) {
+                            console.log('⚠️ Error de YouTube Player:', event.data);
+                        }
+                    }
+                });
+            }
+        }
+
+        // 🎬 Detectar si el link es de YouTube
+        function extraerYouTubeId(url) {
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                if (url.includes('v=')) return url.split('v=')[1].split('&')[0];
+                if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
+                if (url.includes('/embed/')) return url.split('/embed/')[1].split('?')[0];
+                if (url.includes('/shorts/')) return url.split('/shorts/')[1].split('?')[0];
+                return url.split('/').pop().split('?')[0];
+            }
+            return null;
+        }
+
+        // 🎬 Convertir links de otras redes a formato embebible
+        function normalizarUrlVideo(url) {
+            // Facebook
+            if (url.includes('facebook.com')) {
+                if (url.includes('/plugins/video.php')) return url;
+                return 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(url) + '&show_text=false&autoplay=true';
+            }
+            // TikTok
+            if (url.includes('tiktok.com') && url.includes('/video/')) {
+                const id = url.split('/video/')[1].split('?')[0].split('/')[0];
+                return 'https://www.tiktok.com/embed/' + id;
+            }
+            // Instagram (publicaciones y reels)
+            if (url.includes('instagram.com')) {
+                const mi = url.match(/instagram\.com\/(?:p|reel|reels)\/([\w-]+)/);
+                if (mi) return 'https://www.instagram.com/p/' + mi[1] + '/embed';
+                return url;
+            }
+            // Google Drive
+            if (url.includes('drive.google.com')) {
+                const m = url.match(/\/d\/([\w-]+)/);
+                if (m) return 'https://drive.google.com/file/d/' + m[1] + '/preview';
+                return url;
+            }
+            // Vimeo
+            if (url.includes('vimeo.com')) {
+                const id = url.split('vimeo.com/').pop().split('/')[0].split('?')[0];
+                if (id && /^\d+$/.test(id)) return 'https://player.vimeo.com/video/' + id;
+            }
+            // Dailymotion
+            if (url.includes('dailymotion.com')) {
+                const m = url.match(/video\/([\w]+)/);
+                if (m) return 'https://www.dailymotion.com/embed/video/' + m[1];
+            }
+            return url;
+        }
+
+        // 🎬 Mostrar video de CUALQUIER red social con iframe
+        function mostrarVideoGenerico(url) {
+            if (ytPlayer && typeof ytPlayer.destroy === 'function') { try { ytPlayer.destroy(); } catch(e){} ytPlayer = null; }
+            currentVideoId = null;
+            const embedUrl = normalizarUrlVideo(url);
+            const cont = document.getElementById('yt-player-container');
+            // Video directo (.mp4, .webm, etc.) se reproduce con etiqueta <video>
+            if (/\.(mp4|webm|ogg|mov)(\?|$)/i.test(embedUrl)) {
+                cont.innerHTML = `<video src="${embedUrl}" controls autoplay playsinline style="position:absolute;top:0;left:0;width:100%;height:100%;background:#000;"></video>`;
+                return;
+            }
+            cont.innerHTML = `<iframe src="${embedUrl}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen scrolling="no" frameborder="0"></iframe>`;
+        }
+
+        function updateVid() { 
+            let url = document.getElementById('yt-url').value.trim();
+            if (!url) { alert("Pega un enlace de video (YouTube, Facebook, TikTok, Drive...)."); return; }
+
+            const ytId = extraerYouTubeId(url);
+            if (ytId && ytId.length >= 5) {
+                rtdb.ref('sala/video_src').remove();
+                rtdb.ref('sala/video').set(ytId);
+            } else {
+                rtdb.ref('sala/video').remove();
+                rtdb.ref('sala/video_src').set(url);
+            }
+            rtdb.ref('sala/chat').push({ type: 'system', msg: `🎬 ${myNick} cambió el video de la sala`, time: getHora() });
+            document.getElementById('yt-url').value = "";
+        }
+
+        // 🔇 DETENER MÚSICA DE LA SALA
+        function detenerMusicaSala() {
+            const player = document.getElementById('global-room-player');
+            player.pause();
+            player.src = "";
+            rtdb.ref('sala/musica_global').remove();
+            document.getElementById('dropdownMenuTop').style.display = 'none';
+        }
+
+        function handleSeatDirecto(id) {
+            if(currentSeat) rtdb.ref('sala/asientos/' + currentSeat).remove();
+            currentSeat = id;
+            const seatRef = rtdb.ref('sala/asientos/' + id);
+            seatRef.set({ u: myNick, p: myPic, b: myBio, vip: myVipLevel });
+        }
+
+        function clearChatGlobal() { rtdb.ref('sala/chat').remove(); rtdb.ref('sala/typing').remove(); document.getElementById('chat-area').innerHTML = ""; }
+
+        // ===== CONTADOR PERMANENTE - NO SE BORRA AL LIMPIAR CHAT =====
+        function clearChatPrivado() {
+            if(currentPrivRoomId) {
+                // SOLO borramos los mensajes, NO el contador
+                rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/mensajes`).remove();
+                document.getElementById('priv-chat-area').innerHTML = "";
+                // El contador se mantiene intacto en sala/chats_privados/{roomId}/contador
+            }
+        }
+
+        // ===== FUNCIÓN PARA REINICIAR EL CONTADOR MANUALMENTE =====
+        function resetContadorPrivado() {
+            if(currentPrivRoomId) {
+                if(confirm('¿Seguro que quieres reiniciar el contador de puntos a 0? Esto reiniciará tu progreso CP pero mantendrá la pareja si ya son CP.')) {
+                    rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/contador`).set(0);
+                    privContadorActual = 0;
+                    actualizarUIContadorPrivado();
+                    actualizarBarraProgresoPrivado(0);
+                }
+            }
+        }
+
+        function actualizarUIContadorPrivado() {
+            const PUNTOS_NIVEL_1 = 1000;
+            const PUNTOS_POR_NIVEL = 2000;
+            const MAX_NIVEL = 17;
+
+            let nivelActual = 0;
+            for (let n = 1; n <= MAX_NIVEL; n++) {
+                if (privContadorActual >= PUNTOS_NIVEL_1 + (n - 1) * PUNTOS_POR_NIVEL) {
+                    nivelActual = n;
+                } else break;
+            }
+
+            const el = document.getElementById('priv-contador-numero');
+            const contadorBox = document.getElementById('priv-contador-box');
+            if(!el || !contadorBox) return;
+
+            const contadorTexto = contadorBox.querySelector('#priv-contador-texto');
+            const contadorCorazon = contadorBox.querySelector('#priv-contador-corazon');
+            const corazones = ['❤️', '💖', '💗', '💝', '💘', '💕', '💓', '💞', '💟', '❣️', '💌', '💋', '🫶', '💍', '✨', '🔥', '👑'];
+            const heartIcon = corazones[Math.min(nivelActual, MAX_NIVEL - 1)] || '❤️';
+
+            if (contadorCorazon) {
+                contadorCorazon.innerText = heartIcon;
+                contadorCorazon.style = nivelActual >= 2 ? 'color:#ff007f; text-shadow: 0 0 10px #ff007f; animation: pulsoVip 1s infinite alternate;' : 'color:#ff007f;';
+            }
+
+            if (contadorTexto) {
+                if (nivelActual === 0) {
+                    // Sin pareja - mostrando cuánto falta para 1,000
+                    const faltan = PUNTOS_NIVEL_1 - privContadorActual;
+                    contadorTexto.innerText = 'Faltan pareja:';
+                    el.innerText = faltan > 0 ? faltan : 0;
+                } else if (nivelActual >= MAX_NIVEL) {
+                    contadorTexto.innerText = 'NIVEL MAX';
+                    el.innerText = '👑';
+                } else {
+                    const faltan = (PUNTOS_NIVEL_1 + nivelActual * PUNTOS_POR_NIVEL) - privContadorActual;
+                    contadorTexto.innerText = `Faltan CP${nivelActual + 1}:`;
+                    el.innerText = faltan;
+                }
+            }
+        }
+
+        function actualizarBarraProgresoPrivado(puntos) {
+            verificarDesbloqueoCP(puntos);
+            verificarSubidaNivelCP(puntos);
+
+            const barraBox = document.getElementById('priv-progreso-cp-box');
+            const barra = document.getElementById('priv-barra-progreso');
+            const texto = document.getElementById('priv-progreso-texto');
+            const contadorBox = document.getElementById('priv-contador-box');
+            if(!barraBox || !barra || !texto) return;
+
+            barraBox.style.display = 'block';
+
+            // ===== SISTEMA CP: 1,000 mensajes para desbloquear pareja =====
+            const PUNTOS_NIVEL_1 = 1000;
+            const PUNTOS_POR_NIVEL = 2000;
+            const MAX_NIVEL = 17;
+
+            // Calcular nivel actual
+            let nivelActual = 0;
+            let puntosNecesariosNivel = 0;
+            let puntosAcumuladosPrevios = 0;
+
+            for (let n = 1; n <= MAX_NIVEL; n++) {
+                const puntosNecesarios = PUNTOS_NIVEL_1 + (n - 1) * PUNTOS_POR_NIVEL;
+                if (puntos >= puntosNecesarios) {
+                    nivelActual = n;
+                    puntosAcumuladosPrevios = puntosNecesarios;
+                } else {
+                    puntosNecesariosNivel = puntosNecesarios;
+                    break;
+                }
+            }
+
+            if (nivelActual === MAX_NIVEL && puntos >= PUNTOS_NIVEL_1 + (MAX_NIVEL - 1) * PUNTOS_POR_NIVEL) {
+                puntosNecesariosNivel = PUNTOS_NIVEL_1 + (MAX_NIVEL - 1) * PUNTOS_POR_NIVEL;
+                puntosAcumuladosPrevios = puntosNecesariosNivel;
+            }
+
+            if (nivelActual === 0) {
+                puntosNecesariosNivel = PUNTOS_NIVEL_1;
+                puntosAcumuladosPrevios = 0;
+            }
+
+            const puntosParaSiguiente = puntosNecesariosNivel - puntosAcumuladosPrevios;
+            const puntosEnNivelActual = puntos - puntosAcumuladosPrevios;
+            const porcentajeNivel = Math.min(100, (puntosEnNivelActual / puntosParaSiguiente) * 100);
+
+            const corazones = ['❤️', '💖', '💗', '💝', '💘', '💕', '💓', '💞', '💟', '❣️', '💌', '💋', '🫶', '💍', '✨', '🔥', '👑'];
+            const heartIcon = corazones[Math.min(nivelActual, MAX_NIVEL - 1)] || '❤️';
+
+            barra.style.width = porcentajeNivel + '%';
+
+            // ===== CONTADOR PERMANENTE - Muestra progreso hacia pareja =====
+            if (contadorBox) {
+                const contadorCorazon = contadorBox.querySelector('#priv-contador-corazon');
+                const contadorTexto = contadorBox.querySelector('#priv-contador-texto');
+                const contadorNumero = contadorBox.querySelector('#priv-contador-numero');
+
+                if (contadorCorazon) {
+                    contadorCorazon.innerText = heartIcon;
+                    contadorCorazon.style = nivelActual >= 2 ? 'color:#ff007f; text-shadow: 0 0 10px #ff007f; animation: pulsoVip 1s infinite alternate;' : 'color:#ff007f;';
+                }
+
+                if (contadorTexto && contadorNumero) {
+                    if (nivelActual === 0) {
+                        // Sin pareja - mostrando progreso hacia los 1,000
+                        const faltan = PUNTOS_NIVEL_1 - puntos;
+                        contadorTexto.innerText = 'Faltan pareja:';
+                        contadorNumero.innerText = faltan > 0 ? faltan : 0;
+                    } else if (nivelActual >= MAX_NIVEL) {
+                        contadorTexto.innerText = 'NIVEL MAX';
+                        contadorNumero.innerText = '👑';
+                    } else {
+                        const faltan = puntosNecesariosNivel - puntos;
+                        contadorTexto.innerText = `Faltan CP${nivelActual + 1}:`;
+                        contadorNumero.innerText = faltan;
+                    }
+                }
+            }
+
+            // ===== TEXTO DE LA BARRA =====
+            if (nivelActual === 0) {
+                // Estado: Buscando pareja
+                const faltan = PUNTOS_NIVEL_1 - puntos;
+                texto.innerHTML = `<span style="color:#ff007f;">❤️ Buscando pareja</span> — Faltan ${faltan > 0 ? faltan : 0} mensajes para desbloquear CP`;
+                barra.style.background = 'linear-gradient(90deg, #ff007f, #ff0844)';
+                barra.style.animation = 'none';
+            } else if (nivelActual >= MAX_NIVEL) {
+                texto.innerHTML = `<span style="color:#ffd700;">${heartIcon} NIVEL CP ${nivelActual} — MÁXIMO ${heartIcon}</span>`;
+                barra.style.background = 'linear-gradient(90deg, #ff00ff, #ffd700, #00f2fe, #ff00ff)';
+                barra.style.backgroundSize = '400% auto';
+                barra.style.animation = 'brilloGlow 1s linear infinite';
+            } else {
+                const faltan = puntosNecesariosNivel - puntos;
+                texto.innerHTML = `<span style="color:#ff007f;">${heartIcon}</span> NIVEL CP ${nivelActual + 1}: Faltan ${faltan} pts`;
+                barra.style.background = 'linear-gradient(90deg, #ff00ff, #00f2fe, #ffd700)';
+                barra.style.animation = 'none';
+            }
+        }
+
+        function changeBg(i) { if(i.files[0]) { let f=new FileReader(); f.onload=e=>{ rtdb.ref('sala/tema/bg').set(e.target.result); }; f.readAsDataURL(i.files[0]); } }
+
+        function sendPhoto(i) { 
+            if(i.files[0]) { 
+                let f=new FileReader(); 
+                f.onload=e=>{ 
+                    trackearYVerificarMensaje();
+                    rtdb.ref('sala/chat').push({ user: myNick, pic: myPic, bio: myBio, vip: myVipLevel, user_msgs: myMessagesCount, msg: e.target.result, type: 'photo', time: getHora() }); 
+                }; 
+                f.readAsDataURL(i.files[0]); 
+            } 
+        }
+
+        function subirMusicaSala(i) {
+            if(i.files[0]) {
+                let f = new FileReader();
+                f.onload = e => {
+                    rtdb.ref('sala/musica_global').set({ archivo: e.target.result, usuario: myNick });
+                    rtdb.ref('sala/chat').push({ type: 'system', msg: `🎵 ${myNick} puso una canción en la sala`, time: getHora() });
+                };
+                f.readAsDataURL(i.files[0]);
+            }
+        }
+
+        let recorder, chunks = [];
+        async function recStart() {
+            try {
+                rtdb.ref('sala/typing/' + myNick).set('recording');
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                recorder = new MediaRecorder(stream); chunks = [];
+                recorder.ondataavailable = e => chunks.push(e.data);
+                recorder.onstop = () => {
+                    rtdb.ref('sala/typing/' + myNick).remove();
+                    const blob = new Blob(chunks, { type: 'audio/mp3' });
+                    const fr = new FileReader(); fr.readAsDataURL(blob);
+                    fr.onloadend = () => {
+                        trackearYVerificarMensaje();
+                        rtdb.ref('sala/chat').push({ user: myNick, pic: myPic, bio: myBio, vip: myVipLevel, user_msgs: myMessagesCount, msg: fr.result, type: 'audio', time: getHora() });
+                    };
+                };
+                recorder.start();
+                document.getElementById('mic-btn').style.color = "red";
+            } catch(e) { rtdb.ref('sala/typing/' + myNick).remove(); alert("Permite el micrófono."); }
+        }
+        function recStop() { if(recorder && recorder.state !== "inactive") { recorder.stop(); document.getElementById('mic-btn').style.color = "white"; } }
+
+        document.getElementById('msg-in').addEventListener('keypress', e => { if(e.key === 'Enter') { rtdb.ref('sala/typing/' + myNick).remove(); send(); } });
+
+        function abrirChatPrivadoDesdePerfil() {
+            if(!userModalAbierto.nick || userModalAbierto.nick === myNick) return;
+
+            chatPrivadoCon = userModalAbierto.nick;
+            document.getElementById('modal-perfil').style.display = 'none';
+
+            const nombresOrdenados = [myNick, chatPrivadoCon].sort();
+            currentPrivRoomId = nombresOrdenados[0] + "_" + nombresOrdenados[1];
+
+            document.getElementById('priv-header-img').src = userModalAbierto.pic;
+            document.getElementById('priv-header-name').innerHTML = `${chatPrivadoCon} ${generarBadgeHtml(userModalAbierto.vip)}`;
+
+            document.getElementById('modal-chat-privado').style.display = 'flex';
+
+            sincronizarChatPrivado();
+        }
+
+        function cerrarChatPrivado() {
+            if(currentPrivRoomId) {
+                rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/typing/${myNick}`).remove();
+                rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/mensajes`).off();
+                rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/typing`).off();
+                if(listenerNivelCP) listenerNivelCP.off();
+                // Desconectar el listener del contador
+                if(privContadorListener) {
+                    privContadorListener.off();
+                    privContadorListener = null;
+                }
+            }
+            // Limpiar UI
+            const barraBox = document.getElementById('priv-progreso-cp-box');
+            if(barraBox) barraBox.style.display = 'none';
+            document.getElementById('priv-chat-area').innerHTML = "";
+
+            document.getElementById('modal-chat-privado').style.display = 'none';
+            chatPrivadoCon = null;
+            currentPrivRoomId = null;
+            privContadorActual = 0;
+            parejaConfirmada = false;
+            miParejaCP = null;
+            cpNivelActual = 0;
+            cpNivelAnterior = 0;
+            anilloYaMostrado = false;
+            anilloFueCerrado = false;
+        }
+
+        function handleTypingPriv() {
+            if(!currentPrivRoomId) return;
+            const inputVal = document.getElementById('priv-msg-in').value.trim();
+            if(inputVal.length > 0) {
+                rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/typing/${myNick}`).set('typing');
+                clearTimeout(typingTimeoutPriv);
+                typingTimeoutPriv = setTimeout(() => { 
+                    if(currentPrivRoomId) rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/typing/${myNick}`).remove(); 
+                }, 1500);
+            } else { 
+                rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/typing/${myNick}`).remove(); 
+            }
+        }
+
+        // ===== ENVÍO DE MENSAJE PRIVADO CON CONTADOR PERMANENTE =====
+        function sendPriv() {
+            if(!currentPrivRoomId) return;
+            const input = document.getElementById('priv-msg-in');
+            if(input.value.trim()) {
+                rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/typing/${myNick}`).remove();
+
+                // Guardar el mensaje
+                rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/mensajes`).push({
+                    user: myNick,
+                    pic: myPic,
+                    vip: myVipLevel,
+                    msg: input.value,
+                    type: 'text',
+                    time: getHora()
+                });
+
+                // INCREMENTAR CONTADOR PERMANENTE +25 puntos por mensaje
+                const contadorRef = rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/contador`);
+                contadorRef.transaction(function(currentVal) {
+                    return (currentVal || 0) + 25;
+                });
+
+                rtdb.ref(`sala/invitaciones_privadas/${chatPrivadoCon}`).set({
+                    desde: myNick,
+                    pic: myPic,
+                    vip: myVipLevel,
+                    timestamp: Date.now()
+                });
+
+                input.value = "";
+            }
+        }
+
+        function sendPhotoPrivada(i) {
+            if(!currentPrivRoomId || !i.files[0]) return;
+            let f = new FileReader();
+            f.onload = e => {
+                rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/mensajes`).push({
+                    user: myNick,
+                    pic: myPic,
+                    vip: myVipLevel,
+                    msg: e.target.result,
+                    type: 'photo',
+                    time: getHora()
+                });
+
+                // INCREMENTAR CONTADOR PERMANENTE +25 puntos por foto
+                const contadorRef = rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/contador`);
+                contadorRef.transaction(function(currentVal) {
+                    return (currentVal || 0) + 25;
+                });
+
+                rtdb.ref(`sala/invitaciones_privadas/${chatPrivadoCon}`).set({ desde: myNick, pic: myPic, vip: myVipLevel, timestamp: Date.now() });
+            };
+            f.readAsDataURL(i.files[0]);
+        }
+
+        let recorderPriv, chunksPriv = [];
+        async function recStartPriv() {
+            if(!currentPrivRoomId) return;
+            try {
+                rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/typing/${myNick}`).set('recording');
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                recorderPriv = new MediaRecorder(stream); chunksPriv = [];
+                recorderPriv.ondataavailable = e => chunksPriv.push(e.data);
+                recorderPriv.onstop = () => {
+                    rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/typing/${myNick}`).remove();
+                    const blob = new Blob(chunksPriv, { type: 'audio/mp3' });
+                    const fr = new FileReader(); fr.readAsDataURL(blob);
+                    fr.onloadend = () => {
+                        rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/mensajes`).push({
+                            user: myNick,
+                            pic: myPic,
+                            vip: myVipLevel,
+                            msg: fr.result,
+                            type: 'audio',
+                            time: getHora()
+                        });
+
+                        // INCREMENTAR CONTADOR PERMANENTE +25 puntos por audio
+                        const contadorRef = rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/contador`);
+                        contadorRef.transaction(function(currentVal) {
+                            return (currentVal || 0) + 25;
+                        });
+
+                        rtdb.ref(`sala/invitaciones_privadas/${chatPrivadoCon}`).set({ desde: myNick, pic: myPic, vip: myVipLevel, timestamp: Date.now() });
+                    };
+                };
+                recorderPriv.start();
+                document.getElementById('priv-mic-btn').style.color = "red";
+            } catch(e) { 
+                rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/typing/${myNick}`).remove(); 
+                alert("Permite el micrófono para audios."); 
+            }
+        }
+
+        function recStopPriv() { 
+            if(recorderPriv && recorderPriv.state !== "inactive") { 
+                recorderPriv.stop(); 
+                document.getElementById('priv-mic-btn').style.color = "white"; 
+            } 
+        }
+
+        
+        // ===== SISTEMA CP DE PAREJA - RESETEADO A CERO =====
+        let miParejaCP = null;
+        let parejaConfirmada = false;
+        let anilloYaMostrado = false;
+        let anilloFueCerrado = false;
+        let listenerPareja = null;
+        let listenerPropuesta = null;
+        let cpNivelActual = 0;             // Nivel 0 = Sin pareja, buscando
+        let cpNivelAnterior = 0;
+        let listenerNivelCP = null;
+        // CP solo se activa al llegar a 1,000 mensajes en chat privado
+
+        // ===== CERRAR MODAL CON LA X =====
+        function cerrarModalAnilloCP() {
+            document.getElementById('modal-anillo-cp').style.display = 'none';
+            anilloFueCerrado = true; // ← Marcar como cerrado para NO volver a mostrar
+            // Limpiar corazones flotantes
+            const modal = document.getElementById('modal-anillo-cp');
+            modal.querySelectorAll('.heart-particle').forEach(h => h.remove());
+        }
+
+        function verificarDesbloqueoCP(contador) {
+            const nivelNum = parseInt(myVipLevel) || 0;
+            // CP se desbloquea SOLO a los 1,000 mensajes en chat privado
+            // Estado por defecto: "Buscando pareja" (nivel 0)
+            if (contador >= 1000 && !anilloYaMostrado && !anilloFueCerrado && !parejaConfirmada && chatPrivadoCon) {
+                anilloYaMostrado = true;
+                mostrarModalAnilloCP();
+            }
+        }
+
+        function mostrarModalAnilloCP() {
+            const modal = document.getElementById('modal-anillo-cp');
+            const nombresEl = document.getElementById('anillo-nombres-cp');
+            nombresEl.innerText = `${myNick} ❤️ ${chatPrivadoCon}`;
+            modal.style.display = 'flex';
+            lanzarCorazones();
+
+            // Auto-cerrar después de 10 segundos si no responden (para que no quede pegado)
+            setTimeout(() => {
+                if (modal.style.display === 'flex' && !parejaConfirmada) {
+                    cerrarModalAnilloCP();
+                }
+            }, 10000);
+        }
+
+        function lanzarCorazones() {
+            const modal = document.getElementById('modal-anillo-cp');
+            const hearts = ['💕', '💖', '💗', '💓', '💝', '❤️', '💘', '💞'];
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const heart = document.createElement('div');
+                    heart.className = 'heart-particle';
+                    heart.innerText = hearts[Math.floor(Math.random() * hearts.length)];
+                    heart.style.left = (Math.random() * 80 + 10) + '%';
+                    heart.style.top = (Math.random() * 40 + 30) + '%';
+                    heart.style.animationDelay = (Math.random() * 0.5) + 's';
+                    heart.style.fontSize = (Math.random() * 15 + 15) + 'px';
+                    modal.appendChild(heart);
+                    setTimeout(() => heart.remove(), 3000);
+                }, i * 150);
+            }
+        }
+
+        function aceptarSerCP() {
+            if (!currentPrivRoomId) return;
+
+            // Guardar en Firebase que esta persona aceptó
+            rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/pareja/${myNick}`).set({
+                acepto: true,
+                timestamp: Date.now()
+            });
+
+            document.getElementById('anillo-botones-activos').style.display = 'none';
+            document.getElementById('anillo-estado-espera').style.display = 'block';
+            document.getElementById('anillo-texto-pregunta').innerHTML = 'Has aceptado ser CP.<br>Esperando que la otra persona también acepte...';
+
+            // Escuchar si la otra persona también aceptó
+            escucharConfirmacionPareja();
+        }
+
+        function rechazarSerCP() {
+            document.getElementById('modal-anillo-cp').style.display = 'none';
+            anilloFueCerrado = true; // ← Si rechaza, NO vuelve a aparecer
+            // Limpiar corazones
+            document.getElementById('modal-anillo-cp').querySelectorAll('.heart-particle').forEach(h => h.remove());
+        }
+
+        function escucharConfirmacionPareja() {
+            if (!currentPrivRoomId) return;
+
+            const parejaRef = rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/pareja`);
+            parejaRef.on('value', s => {
+                const datos = s.val() || {};
+                const ambosAceptaron = datos[myNick]?.acepto && datos[chatPrivadoCon]?.acepto;
+
+                if (ambosAceptaron && !parejaConfirmada) {
+                    parejaConfirmada = true;
+                    miParejaCP = chatPrivadoCon;
+                    cpNivelActual = 1; // Nivel inicial del CP
+
+                    // Guardar la pareja oficial
+                    rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/pareja_oficial`).set({
+                        pareja1: myNick,
+                        pareja2: chatPrivadoCon,
+                        fecha: Date.now(),
+                        nivel: 1  // ← Nivel inicial del CP
+                    });
+
+                    // Mostrar celebración
+                    document.getElementById('anillo-estado-espera').style.display = 'none';
+                    document.getElementById('anillo-resultado-final').style.display = 'block';
+                    document.getElementById('anillo-texto-pregunta').innerHTML = '<span style="color:#ffd700; font-size:16px;">¡FELICIDADES!</span><br>Ahora son CP oficialmente';
+
+                    lanzarConfetti();
+                    lanzarCorazones();
+
+                    // Enviar mensaje de sistema al chat privado
+                    rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/mensajes`).push({
+                        type: 'system',
+                        msg: `💍🔥 ¡${myNick} y ${chatPrivadoCon} SON CP OFICIAL! 🔥💍`,
+                        time: getHora()
+                    });
+
+                    // Anuncio global
+                    rtdb.ref('sala/chat').push({
+                        type: 'system',
+                        msg: `💍✨ ¡${myNick} y ${chatPrivadoCon} se han convertido en CP OFICIAL! ✨💍`,
+                        time: getHora()
+                    });
+                    lanzarAnuncioGlobalPush(`💍 ¡${myNick} y ${chatPrivadoCon} son ahora CP OFICIAL! 💍`);
+
+                    // Cerrar modal rápido (3 segundos) y limpiar
+                    setTimeout(() => {
+                        cerrarModalAnilloCP();
+                        // Resetear el estado del modal para futuros usos
+                        document.getElementById('anillo-botones-activos').style.display = 'block';
+                        document.getElementById('anillo-estado-espera').style.display = 'none';
+                        document.getElementById('anillo-resultado-final').style.display = 'none';
+                    }, 3000);
+
+                    // Actualizar UI
+                    actualizarBadgeCP();
+                }
+            });
+        }
+
+        function lanzarConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const colors = ['#ff007f', '#ffd700', '#00f2fe', '#00ff88', '#ff0844', '#9b59b6'];
+            const particles = [];
+
+            for (let i = 0; i < 150; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: Math.random() * 3 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    size: Math.random() * 6 + 3,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 10
+                });
+            }
+
+            let frame = 0;
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.rotation += p.rotationSpeed;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                    ctx.restore();
+
+                    if (p.y > canvas.height) {
+                        p.y = -10;
+                        p.x = Math.random() * canvas.width;
+                    }
+                });
+
+                frame++;
+                if (frame < 300) requestAnimationFrame(animate);
+                else ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            animate();
+        }
+
+        // ===== ACTUALIZAR BADGE CP CON NIVEL DE COLOR =====
+        function actualizarBadgeCP() {
+            const headerName = document.getElementById('priv-header-name');
+            if (!headerName || !chatPrivadoCon) return;
+
+            // Buscar el nivel VIP del chatPrivadoCon desde presencia
+            rtdb.ref(`sala/presencia/${chatPrivadoCon}/vip`).once('value', snap => {
+                const vipOtro = snap.val() || '4';
+                const badgeHtml = generarBadgeHtml(vipOtro);
+
+                if (parejaConfirmada && currentPrivRoomId) {
+                    // PRIMERO leer el nivel REAL del CP desde Firebase
+                    rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/pareja_oficial/nivel`).once('value', snapNivel => {
+                        const nivelReal = snapNivel.val() || 1;
+                        cpNivelActual = nivelReal;
+                        const colorCiclo = ((cpNivelActual - 1) % 4) + 1;
+                        const cpNivelClass = `badge-cp-nivel-${colorCiclo}`;
+                        headerName.innerHTML = `${chatPrivadoCon} ${badgeHtml} <span class="badge-cp-pareja ${cpNivelClass}">CP${cpNivelActual}</span>`;
+                    });
+                } else {
+                    // Sin pareja - mostrar estado "Buscando pareja"
+                    headerName.innerHTML = `${chatPrivadoCon} ${badgeHtml} <span style="font-size:8px; color:#ff007f; font-family:'Orbitron'; margin-left:4px;"><i class="fas fa-heart"></i> Buscando pareja</span>`;
+                }
+            });
+        }
+
+        // ===== ESCUCHAR CAMBIOS DE NIVEL CP (subida de nivel) =====
+        function escucharNivelCP() {
+            if (!currentPrivRoomId) return;
+
+            if (listenerNivelCP) listenerNivelCP.off();
+
+            listenerNivelCP = rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/pareja_oficial/nivel`);
+            listenerNivelCP.on('value', s => {
+                if (!s.exists()) return;
+
+                const nuevoNivel = s.val() || 1;
+
+                // Si subió de nivel (y ya eran pareja)
+                if (nuevoNivel > cpNivelAnterior && cpNivelAnterior > 0 && parejaConfirmada) {
+                    // Solo mostrar mensaje de celebración, NO el modal de anillo
+                    mostrarCelebracionSubidaNivel(nuevoNivel);
+                }
+
+                cpNivelActual = nuevoNivel;
+                cpNivelAnterior = nuevoNivel;
+                actualizarBadgeCP();
+            });
+        }
+
+        // ===== MOSTRAR CELEBRACIÓN DE SUBIDA DE NIVEL (sin modal de anillo) =====
+        function mostrarCelebracionSubidaNivel(nivel) {
+            // Mensajes especiales para cada nivel CP 2-17
+            const mensajesNivel = {
+                2: `🌸 ¡${myNick} y ${chatPrivadoCon} subieron a Nivel 2 CP! Amor en crecimiento`,
+                3: `✨ ¡${myNick} y ${chatPrivadoCon} subieron a Nivel 3 CP! Conexión cósmica`,
+                4: `💫 ¡${myNick} y ${chatPrivadoCon} alcanzaron el Nivel 4 CP! Alma gemela`,
+                5: `🌟 ¡${myNick} y ${chatPrivadoCon} subieron a Nivel 5 CP! Destino unido`,
+                6: `💎 ¡${myNick} y ${chatPrivadoCon} subieron a Nivel 6 CP! Diamante puro`,
+                7: `🔥 ¡${myNick} y ${chatPrivadoCon} subieron a Nivel 7 CP! Pasión eterna`,
+                8: `🌙 ¡${myNick} y ${chatPrivadoCon} subieron a Nivel 8 CP! Luna de miel`,
+                9: `⚡ ¡${myNick} y ${chatPrivadoCon} subieron a Nivel 9 CP! Rayo de amor`,
+                10: `👑 ¡${myNick} y ${chatPrivadoCon} alcanzaron el Nivel 10 CP! Realeza`,
+                11: `🌌 ¡${myNick} y ${chatPrivadoCon} subieron a Nivel 11 CP! Universo`,
+                12: `💫 ¡${myNick} y ${chatPrivadoCon} subieron a Nivel 12 CP! Estrella fugaz`,
+                13: `🦋 ¡${myNick} y ${chatPrivadoCon} subieron a Nivel 13 CP! Mariposas`,
+                14: `🌈 ¡${myNick} y ${chatPrivadoCon} subieron a Nivel 14 CP! Arcoíris`,
+                15: `💍 ¡${myNick} y ${chatPrivadoCon} subieron a Nivel 15 CP! Compromiso`,
+                16: `🔮 ¡${myNick} y ${chatPrivadoCon} subieron a Nivel 16 CP! Místico`,
+                17: `🏆 ¡${myNick} y ${chatPrivadoCon} alcanzaron el NIVEL 17 CP! LEYENDA ETERNA 🏆`
+            };
+
+            const mensaje = mensajesNivel[nivel] || `🎉 ¡${myNick} y ${chatPrivadoCon} subieron a Nivel ${nivel} CP!`;
+
+            // Mensaje en chat privado
+            rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/mensajes`).push({
+                type: 'system',
+                msg: mensaje,
+                time: getHora()
+            });
+
+            // ===== CONFETI ESPECIAL AL LLEGAR AL NIVEL 4 =====
+            if (nivel === 4) {
+                lanzarConfettiGrande();
+                setTimeout(() => {
+                    rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/mensajes`).push({
+                        type: 'system',
+                        msg: `🎊🎊🎊 ¡FELICIDADES! ${myNick} y ${chatPrivadoCon} son ahora ALMA GEMELA CP NIVEL 4 🎊🎊🎊`,
+                        time: getHora()
+                    });
+                }, 1000);
+            } else {
+                lanzarConfetti();
+            }
+        }
+
+        // ===== CONFETI GRANDE (solo nivel 4) =====
+        function lanzarConfettiGrande() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const colors = ['#ff007f', '#ffd700', '#00f2fe', '#00ff88', '#ff0844', '#9b59b6', '#ff00ff', '#fff'];
+            const particles = [];
+
+            for (let i = 0; i < 300; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: Math.random() * 4 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    size: Math.random() * 10 + 4,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 15
+                });
+            }
+
+            let frame = 0;
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.rotation += p.rotationSpeed;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                    ctx.restore();
+
+                    if (p.y > canvas.height) {
+                        p.y = -10;
+                        p.x = Math.random() * canvas.width;
+                    }
+                });
+
+                frame++;
+                if (frame < 500) requestAnimationFrame(animate);
+                else ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            animate();
+        }
+
+        // ===== SUBIR DE NIVEL CP (cada 5,000 puntos adicionales) =====
+        function verificarSubidaNivelCP(contador) {
+            if (!parejaConfirmada || !currentPrivRoomId) return;
+
+            // Nivel 1: 1,000 pts | Nivel 2: 3,000 | Nivel 3: 5,000 | Nivel 4: 7,000
+            // Nivel 5: 9,000 | Nivel 6: 11,000 | ... | Nivel 17: 33,000 pts
+            const PUNTOS_NIVEL_1 = 1000;
+            const PUNTOS_POR_NIVEL = 2000;
+            const MAX_NIVEL = 17;
+
+            let nuevoNivel = 1;
+            for (let n = 2; n <= MAX_NIVEL; n++) {
+                if (contador >= PUNTOS_NIVEL_1 + (n - 1) * PUNTOS_POR_NIVEL) {
+                    nuevoNivel = n;
+                }
+            }
+
+            if (nuevoNivel > cpNivelActual && nuevoNivel <= MAX_NIVEL) {
+                // Actualizar nivel en Firebase
+                rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/pareja_oficial/nivel`).set(nuevoNivel);
+            }
+        }
+
+        function verificarParejaExistente() {
+            if (!currentPrivRoomId) return;
+
+            rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/pareja_oficial`).once('value', s => {
+                if (s.exists()) {
+                    const datos = s.val();
+                    parejaConfirmada = true;
+                    anilloYaMostrado = true;
+                    anilloFueCerrado = true;
+                    miParejaCP = (datos.pareja1 === myNick) ? datos.pareja2 : datos.pareja1;
+                    const nivelReal = datos.nivel || 1;
+                    cpNivelActual = nivelReal;
+                    cpNivelAnterior = nivelReal;
+                    actualizarBadgeCP();
+                    escucharNivelCP();
+                } else {
+                    // Sin pareja confirmada - estado limpio "Buscando pareja"
+                    parejaConfirmada = false;
+                    miParejaCP = null;
+                    cpNivelActual = 0;
+                    cpNivelAnterior = 0;
+                }
+            });
+        }
+
+        function sincronizarChatPrivado() {
+            // Primero verificar si ya son pareja, para no mostrar el modal de anillo
+            verificarParejaExistente();
+            const privArea = document.getElementById('priv-chat-area');
+            // CHAT PRIVADO LIMPIO - No cargar mensajes antiguos
+            privArea.innerHTML = "";
+
+            // Track rendered message keys to avoid duplicates
+            const privRenderedKeys = new Set();
+
+            const msgRef = rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/mensajes`);
+
+            // Cargar TODOS los mensajes históricos del chat privado
+            msgRef.once('value', snapshot => {
+                let historialHTML = "";
+                snapshot.forEach(child => {
+                    if (!privRenderedKeys.has(child.key)) {
+                        privRenderedKeys.add(child.key);
+                        historialHTML += renderMensajeIndividual(child.val(), true);
+                    }
+                });
+                privArea.innerHTML = historialHTML;
+                requestAnimationFrame(() => { privArea.scrollTop = privArea.scrollHeight; });
+            });
+
+            // Escuchar mensajes NUEVOS en tiempo real
+            msgRef.on('child_added', newChild => {
+                if (!privRenderedKeys.has(newChild.key)) {
+                    privRenderedKeys.add(newChild.key);
+                    privArea.insertAdjacentHTML('beforeend', renderMensajeIndividual(newChild.val(), true));
+                    requestAnimationFrame(() => { privArea.scrollTop = privArea.scrollHeight; });
+                }
+            });
+
+            // Sincronizar TYPING
+            rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/typing`).on('value', s => {
+                const listaEstanEscribiendo = s.val() || {};
+                const indicadorPriv = document.getElementById('priv-typing-indicator');
+                if(listaEstanEscribiendo[chatPrivadoCon]) {
+                    indicadorPriv.innerText = listaEstanEscribiendo[chatPrivadoCon] === 'recording' ? `🎙️ ${chatPrivadoCon} está grabando un audio privado...` : `✍️ ${chatPrivadoCon} está escribiendo...`;
+                } else {
+                    indicadorPriv.innerText = "";
+                }
+            });
+
+            // SINCRONIZAR CONTADOR PERMANENTE + BARRA PROGRESO CP
+            privContadorListener = rtdb.ref(`sala/chats_privados/${currentPrivRoomId}/contador`);
+            privContadorListener.on('value', s => {
+                if(s.exists()) {
+                    privContadorActual = s.val() || 0;
+                } else {
+                    privContadorActual = 0;
+                }
+                actualizarUIContadorPrivado();
+                actualizarBarraProgresoPrivado(privContadorActual);
+            });
+        }
+
+        function escucharInvitacionesPrivadas() {
+            rtdb.ref(`sala/invitaciones_privadas/${myNick}`).on('value', s => {
+                if(s.exists()) {
+                    const datos = s.val();
+                    if(chatPrivadoCon !== datos.desde) {
+                        lanzarAnuncioGlobalPush(`💬 ¡Mensaje Privado de ${datos.desde}! Toca su avatar arriba para abrir el chat.`);
+                    }
+                    rtdb.ref(`sala/invitaciones_privadas/${myNick}`).remove(); 
+                }
+            });
+        }
+
+        document.getElementById('priv-msg-in').addEventListener('keypress', e => { if(e.key === 'Enter') sendPriv(); });
+    </script>
+
+    <!-- ===== MODAL ANILLO CP - PAREJA ===== -->
+    <canvas id="confetti-canvas"></canvas>
+    <div id="modal-anillo-cp">
+        <div class="anillo-cp-card">
+            <button class="anillo-cerrar-x" onclick="cerrarModalAnilloCP()" title="Cerrar">×</button>
+            <div class="anillo-icono">💍</div>
+            <div class="anillo-titulo">¡MOMENTO ESPECIAL!</div>
+            <div class="anillo-subtitulo" id="anillo-texto-pregunta">¡Has alcanzado el Nivel 1 de CP!<br>(1,000 puntos)<br>¿Quieres unir tu destino con esta persona?</div>
+            <div class="anillo-nombres" id="anillo-nombres-cp">❤️</div>
+            <div id="anillo-botones-activos">
+                <button class="btn-anillo-aceptar" onclick="aceptarSerCP()">
+                    <i class="fas fa-heart"></i> SÍ, ACEPTO SER TU CP
+                </button>
+                <br>
+                <button class="btn-anillo-rechazar" onclick="rechazarSerCP()">
+                    Ahora no...
+                </button>
+            </div>
+            <div class="anillo-estado-espera" id="anillo-estado-espera" style="display:none;">
+                <i class="fas fa-clock"></i> Esperando respuesta de la otra persona...
+            </div>
+            <div id="anillo-resultado-final" style="display:none; margin-top:15px;">
+                <div style="font-size:30px;">💍❤️💍</div>
+                <div style="font-family:'Orbitron'; color:#ffd700; font-size:14px; margin-top:10px;">¡CP OFICIAL!</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
